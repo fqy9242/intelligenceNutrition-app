@@ -1,9 +1,35 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			// uni-ui 规则如下配置
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
+	},
+	"pages": [
+		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "首页"
+			}
+		},
+		{
+			"path": "pages/helthAnalyzer/helthAnalyzer",
+			"style": {
+				"navigationBarTitleText": "健康分析"
+			}
+		},
+		{
+			"path": "pages/historyRecord/historyRecord",
+			"style": {
+				"navigationBarTitleText": "历史记录"
+			}
+		},
+		{
+			"path": "pages/my/my",
+			"style": {
+				"navigationBarTitleText": "我的"
 			}
 		}
 	],
@@ -12,5 +38,37 @@
 		"navigationBarTitleText": "uni-app",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7a6666",
+		"selectedColor": "#1296db",
+		"borderStyle": "black",
+		"backgroundColor": "#F8F8F8",
+		"list": [
+			{
+				"iconPath": "static/icon/home.png",
+				"selectedIconPath": "static/icon/home_selected.png",
+				"pagePath": "pages/index/index",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/helthAnalyzer/helthAnalyzer",
+				"iconPath": "static/icon/analysis.png",
+				"selectedIconPath": "static/icon/analysis_selected.png",
+				"text": "健康分析"
+			},
+			{
+				"pagePath": "pages/historyRecord/historyRecord",
+				"iconPath": "static/icon/calendar.png",
+				"selectedIconPath": "static/icon/calendar_selected.png",
+				"text": "历史记录"
+			},
+			{
+				"pagePath": "pages/my/my",
+				"iconPath": "static/icon/my.png",
+				"selectedIconPath": "static/icon/my_selected.png",
+				"text": "我的"
+			}
+		]
 	}
 }

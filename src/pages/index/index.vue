@@ -1,48 +1,14 @@
-<template>
-  <view class="content">
-    <image class="logo" src="/static/logo.png"></image>
-    <view class="text-area">
-      <text class="title">{{ title }}</text>
-    </view>
-  </view>
-</template>
+<!-- Author: qht -->
+<!-- Date: 2025-05-07 -->
+<script setup>
 
-<script>
-export default {
-  data() {
-    return {
-      title: 'Hello',
-    }
-  },
-  onLoad() {},
-  methods: {},
-}
 </script>
 
-<style>
-.content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+<template>
+  
 
-.logo {
-  height: 200rpx;
-  width: 200rpx;
-  margin-top: 200rpx;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 50rpx;
-}
+</template>
 
-.text-area {
-  display: flex;
-  justify-content: center;
-}
+<style scoped>
 
-.title {
-  font-size: 36rpx;
-  color: #8f8f94;
-}
 </style>
