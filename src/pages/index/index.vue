@@ -21,7 +21,10 @@ const recommendedCalories = ref(1800);
 </template>
 
 <style scoped>
-.index-name {
-  
+.card-container {
+  display: flex;
+}
+.half-width-card {
+  width: 50%;
 }
 </style>
