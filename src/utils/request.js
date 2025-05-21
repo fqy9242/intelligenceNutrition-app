@@ -1,8 +1,8 @@
-const baseUrl = "" // 基础url
+const baseUrl = "http://localhost:8080" // 基础url
 // 设置请求拦截器
 const httpInterceptor = {
     invoke(options) {
-      if (options.url.startWith("http")) {
+      if (!options.url.startsWith("http")) {
         // 不是以http开头 => 拼接
         options.url = baseUrl + options.url;
       }
