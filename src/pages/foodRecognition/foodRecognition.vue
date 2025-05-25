@@ -2,21 +2,17 @@
 <!-- Date: 2025-05-14 -->
 <script setup>
 import { ref, onMounted } from 'vue';
-
+import { onLoad } from '@dcloudio/uni-app';
 // 获取页面传递的参数
 const image = ref('');
 
 // 识别结果
 const recognitionResult = ref({
-  name: '红烧排骨',
-  calories: '350kcal',
-  nutrients: [
-    { name: '蛋白质', value: '15g' },
-    { name: '脂肪', value: '20g' },
-    { name: '碳水化合物', value: '10g' }
-  ],
-  stars: 4,
-  suitablePeople: '需要补充蛋白质的学生'
+  name: '',
+  calories: '',
+  nutrients: [],
+  stars: 0,
+  suitablePeople: ''
 });
 
 // 添加到今日饮食
@@ -38,17 +34,33 @@ const addToTodaysDiet = () => {
 const goBack = () => {
   uni.navigateBack();
 };
-
-onMounted(() => {
-  // 获取页面参数
-  const pages = getCurrentPages();
-  const currentPage = pages[pages.length - 1];
-  const options = currentPage.options;
-  
-  if (options && options.image) {
+onLoad((options) => {
+  if (options.image) {
     image.value = decodeURIComponent(options.image);
   }
+  if (options.result) {
+      const resultData = JSON.parse(decodeURIComponent(options.result));
+      // console.log('接收到的识别结果:', resultData);
+      // 更新识别结果
+      recognitionResult.value = formatRecognitionResult(resultData);
+
+  }
 });
+
+// 格式化识别结果
+const formatRecognitionResult = (rawResult) => {
+    return {
+      name: rawResult.name || '未知食物',
+      calories: rawResult.calories || '0 kcal',
+      nutrients: rawResult.nutrients || [
+        { name: '蛋白质', value: '0g' },
+        { name: '脂肪', value: '0g' },
+        { name: '碳水化合物', value: '0g' }
+      ],
+      stars: rawResult.star || 0, 
+      suitablePeople: rawResult.suitablePeople || '一般人群'
+    };
+};
 </script>
 
 <template>
