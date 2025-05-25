@@ -1,5 +1,5 @@
-import request from '@/utils/request'
-export const login = (data) => {
+import { request } from '@/utils/request'
+export const loginApi = (data) => {
     return request({
         url: '/client/user/login',
         method: 'post',

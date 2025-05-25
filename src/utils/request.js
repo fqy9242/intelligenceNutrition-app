@@ -1,10 +1,14 @@
-const baseUrl = "http://localhost:8080" // 基础url
+// const baseUrl = "http://localhost:8080" // 基础url
 // 设置请求拦截器
 const httpInterceptor = {
     invoke(options) {
+      // if (!options.url.startsWith("http")) {
+      //   // 不是以http开头 => 拼接
+      //   options.url = baseUrl + options.url;
+      // }
       if (!options.url.startsWith("http")) {
         // 不是以http开头 => 拼接
-        options.url = baseUrl + options.url;
+        options.url = "/api" + options.url;
       }
       // 设置请求超时时间为10s
       options.timeout = 10000;
@@ -21,7 +25,7 @@ const httpInterceptor = {
     //   }
     }
 } 
-
+uni.addInterceptor("request", httpInterceptor);
 export const request = (options) => {
   return new Promise((resolve, reject) => {
     uni.request({

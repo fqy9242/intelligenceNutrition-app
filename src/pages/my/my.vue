@@ -3,16 +3,16 @@
 <script setup>
 import { ref } from 'vue';
 
-const userInfo = ref({
-  name: '张同学',
-  studentNumber: "2024001",
-  height: 175,
-  avatar: "https://ts3.tc.mm.bing.net/th/id/OIP-C.g5M-iZUiocFCi9YAzojtRAAAAA?cb=iwp1&rs=1&pid=ImgDetMain",
-  weight: 65,
-  BMI: 21.5,
-  irritability: null // 是否过敏
-});
-
+// const userInfo = ref({
+//   name: '张同学',
+//   studentNumber: "2024001",
+//   height: 175,
+//   avatar: "https://ts3.tc.mm.bing.net/th/id/OIP-C.g5M-iZUiocFCi9YAzojtRAAAAA?cb=iwp1&rs=1&pid=ImgDetMain",
+//   weight: 65,
+//   BMI: 21.5,
+//   irritability: null // 是否过敏
+// });
+const userInfo = uni.getStorageSync('userInfo')
 // 健康记录信息
 const healthRecord = ref({
   currentWeekSport: 5,
@@ -23,8 +23,8 @@ const healthRecord = ref({
 const avatarOnHandle = () => {
   // 放大图片预览
   uni.previewImage({
-    urls: [userInfo.value.avatar],
-    current: userInfo.value.avatar
+    urls: [userInfo.avatar],
+    current: userInfo.avatar
   });
 };
 
@@ -106,7 +106,7 @@ const logout = () => {
       <view class="health-info">
         <text class="health-item">身高：{{ userInfo.height }} cm</text>
         <text class="health-item">体重：{{ userInfo.weight }} kg</text>
-        <text class="health-item">BMI：{{ userInfo.BMI }}</text>
+        <text class="health-item">BMI：{{ userInfo.bmi }}</text>
         <text class="health-item">过敏源：{{ userInfo.irritability ? userInfo.irritability : '无' }}</text>
       </view>
     </uni-card>

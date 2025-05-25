@@ -1,11 +1,11 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-07 -->
 <script setup>
-import { ref, reactive } from 'vue';
-
+import { ref, reactive } from 'vue'
+import { loginApi } from '@/apis/user'
 // 登录表单数据
 const loginForm = reactive({
-    username: '',
+    studentNumber: '',
     password: ''
 });
 
@@ -14,7 +14,7 @@ const errorMessage = ref('');
 
 // 表单验证
 const validateForm = () => {
-    if (!loginForm.username) {
+    if (!loginForm.studentNumber) {
         errorMessage.value = '请输入用户名';
         return false;
     }
@@ -26,29 +26,34 @@ const validateForm = () => {
 };
 
 // 登录处理函数
-const handleLogin = () => {
+const handleLogin = async ()  => {
     errorMessage.value = '';
 
     if (!validateForm()) {
         return;
     }
 
-    // 这里添加实际的登录逻辑
+
     uni.showLoading({
         title: '登录中...'
     });
-
-    // 模拟网络请求
-    setTimeout(() => {
-        uni.hideLoading();
-        // 假设登录成功
-        uni.setStorageSync('token', 'sample-token');
+    const res = await loginApi(loginForm);
+    uni.hideLoading();
+    if (res.code === 200) {
+        // 登录成功， 保存用户信息
+        uni.setStorageSync('token', res.data.token);
         uni.setStorageSync('userInfo', {
-            username: loginForm.username,
-            name: '张同学',
-            studentNumber: '2024001'
+            id: res.data.id,
+            name: res.data.name,
+            avatar: res.data.avatar,
+            studentNumber: res.data.studentNumber,
+            height: res.data.height,
+            weight: res.data.weight,
+            allergen: res.data.allergen,
+            countThisWeekSport: res.data.countThisWeekSport,
+            countHealthCheckIn: res.data.countHealthCheckIn,
+            bmi: res.data.bmi
         });
-
         uni.showToast({
             title: '登录成功',
             icon: 'success',
@@ -61,15 +66,13 @@ const handleLogin = () => {
                 url: '/pages/index/index'
             });
         }, 1500);
-    }, 1500);
-};
+    } else {
+        // 登录失败
+        errorMessage.value = res.message || '登录失败，请重试';
+    }
 
-// 前往注册页面
-const goToRegister = () => {
-    uni.navigateTo({
-        url: '/pages/register/register'
-    });
-};
+}
+    
 </script>
 
 <template>
@@ -83,7 +86,7 @@ const goToRegister = () => {
         <view class="login-form">
             <view class="form-item">
                 <text class="label">用户名</text>
-                <input class="input" type="text" v-model="loginForm.username" placeholder="请输入用户名" />
+                <input class="input" type="text" v-model="loginForm.studentNumber" placeholder="请输入用户名" />
             </view>
 
             <view class="form-item">
