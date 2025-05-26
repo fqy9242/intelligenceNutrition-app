@@ -1,4 +1,33 @@
-// const baseUrl = "http://localhost:8080" // 基础url
+const baseUrl = "http://localhost:8080" // 基础url
+
+// 获取完整URL
+export const getFullUrl = (url) => {
+  // #ifdef H5
+  // H5环境，保持原样，走Vite代理
+  return url;
+  // #endif
+  // #ifdef MP-WEIXIN
+  // 微信小程序环境，使用完整URL
+  if (url.startsWith('/api')) {
+    return baseUrl + url.replace(/^\/api/, "");
+  }
+  return url;
+  // #endif
+  
+  // #ifdef MP-ALIPAY || MP-BAIDU || MP-TOUTIAO || MP-QQ
+  // 其他小程序环境
+  if (url.startsWith('/api')) {
+    return baseUrl + url.replace(/^\/api/, "");
+  }
+  return url;
+  // #endif
+  // 默认返回原始URL
+  return url;
+};
+
+
+
+
 // 设置请求拦截器
 const httpInterceptor = {
     invoke(options) {
@@ -9,6 +38,7 @@ const httpInterceptor = {
       if (!options.url.startsWith("http")) {
         // 不是以http开头 => 拼接
         options.url = "/api" + options.url;
+        options.url = getFullUrl(options.url);
       }
       // 设置请求超时时间为10s
       options.timeout = 10000;

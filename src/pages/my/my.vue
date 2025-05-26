@@ -1,7 +1,8 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-07 -->
 <script setup>
-import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import { computed, ref } from 'vue';
 
 // const userInfo = ref({
 //   name: '张同学',
@@ -12,7 +13,7 @@ import { ref } from 'vue';
 //   BMI: 21.5,
 //   irritability: null // 是否过敏
 // });
-const userInfo = uni.getStorageSync('userInfo')
+const userInfo = ref(null)
 // 健康记录信息
 const healthRecord = ref({
   currentWeekSport: 5,
@@ -23,8 +24,8 @@ const healthRecord = ref({
 const avatarOnHandle = () => {
   // 放大图片预览
   uni.previewImage({
-    urls: [userInfo.avatar],
-    current: userInfo.avatar
+    urls: [userInfo.value.avatar],
+    current: 0
   });
 };
 
@@ -88,6 +89,28 @@ const logout = () => {
     }
   });
 };
+
+const getAllergen = computed(() => {
+   if (!userInfo.value || !userInfo.value.allergen) {
+    return '无';
+   }
+  return '[ ' + userInfo.value.allergen.join(', ') + ' ]';
+});
+onLoad(() => {
+  userInfo.value = uni.getStorageSync('userInfo')
+  if (!userInfo.value) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+      duration: 2000
+    });
+    setTimeout(() => {
+      uni.reLaunch({
+        url: '/pages/login/login'
+      });
+    }, 1500);
+  }
+})
 </script>
 
 <template>
@@ -107,7 +130,7 @@ const logout = () => {
         <text class="health-item">身高：{{ userInfo.height }} cm</text>
         <text class="health-item">体重：{{ userInfo.weight }} kg</text>
         <text class="health-item">BMI：{{ userInfo.bmi }}</text>
-        <text class="health-item">过敏源：{{ userInfo.irritability ? userInfo.irritability : '无' }}</text>
+        <text class="health-item">过敏源：{{ getAllergen }}</text>
       </view>
     </uni-card>
     
