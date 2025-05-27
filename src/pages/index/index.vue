@@ -15,13 +15,132 @@ const getNextCheckDay = async () => {
    Math.ceil((new Date(res.data.physicalExaminationTime).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) 
   // console.log('下次体检时间:', nextCheckDay.value);
 }
-const BMI = uni.getStorageSync('userInfo').bmi
+const BMI = ref('--');
+// 安全获取BMI数据
+const getUserBMI = () => {
+  try {
+    const userInfo = uni.getStorageSync('userInfo');
+    if (userInfo && userInfo.bmi) {
+      BMI.value = userInfo.bmi;
+    }
+  } catch (error) {
+    console.error('获取BMI数据失败:', error);
+    BMI.value = '--';
+  }
+};
+
+// 饮食记录弹窗相关数据
+const showDietModal = ref(false);
+const dietForm = ref({
+  mealType: '早餐',
+  foodName: '',
+  weight: '',
+  time: ''
+});
+
+// 饮食记录列表
+const dietRecords = ref([
+  {
+    id: 1,
+    mealType: '早餐',
+    foodName: '全麦面包 + 牛奶 + 水果',
+    weight: 200,
+    time: '08:30'
+  },
+  {
+    id: 2,
+    mealType: '午餐',
+    foodName: '米饭 + 清蒸鱼 + 青菜',
+    calories: 750,
+    time: '12:00'
+  }
+]);
+
+// 餐次选项
+const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
+
 // 添加饮食记录
 const addDietRecord = () => {
+  // 设置默认时间为当前时间
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  dietForm.value.time = `${hours}:${minutes}`;
+  
+  showDietModal.value = true;
+}
+const addWaterRecord = () => {
   uni.showToast({
     title: '功能开发中',
     icon: 'none'
   });
+};
+
+// 保存饮食记录
+const saveDietRecord = () => {
+  if (!dietForm.value.foodName.trim()) {
+    uni.showToast({
+      title: '请输入食物名称',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  if (!dietForm.value.calories) {
+    uni.showToast({
+      title: '请输入卡路里',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 添加新记录
+  const newRecord = {
+    id: Date.now(),
+    mealType: dietForm.value.mealType,
+    foodName: dietForm.value.foodName,
+    calories: parseInt(dietForm.value.calories),
+    time: dietForm.value.time
+  };
+  
+  dietRecords.value.push(newRecord);
+  
+  // 重置表单
+  dietForm.value = {
+    mealType: '早餐',
+    foodName: '',
+    calories: '',
+    time: ''
+  };
+  
+  showDietModal.value = false;
+  
+  uni.showToast({
+    title: '添加成功',
+    icon: 'success'
+  });
+};
+
+// 取消添加
+const cancelDietRecord = () => {
+  showDietModal.value = false;
+  // 重置表单
+  dietForm.value = {
+    mealType: '早餐',
+    foodName: '',
+    calories: '',
+    time: ''
+  };
+};
+
+// 餐次选择事件
+const onMealTypeChange = (e) => {
+  dietForm.value.mealType = mealTypes[e.detail.value];
+};
+
+// 时间选择事件
+const onTimeChange = (e) => {
+  dietForm.value.time = e.detail.value;
 };
 
 // 添加运动记录
@@ -63,7 +182,8 @@ const openCamera = () => {
   })
 };
 onLoad(() => {
-  getNextCheckDay()
+  getNextCheckDay();
+  getUserBMI();
 })
 </script>
 
@@ -79,23 +199,14 @@ onLoad(() => {
         <view class="stat-value">{{ recommendedCalories }}</view>
         <view class="stat-label">今日推荐摄入(kcal)</view>
       </view>
-    </view>
-
-    <!-- 今日健康打卡 -->
+    </view> <!-- 今日健康打卡 -->
     <uni-card title="今日健康打卡" :padding="false" class="custom-card">
       <view class="card-content">
-        <view class="dish-item">
+        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
           <view class="dish-info">
-            <view class="dish-title">早餐</view>
-            <view class="dish-desc">全麦面包 + 牛奶 + 水果</view>
-            <view class="dish-desc">08:30 | 450kcal</view>
-          </view>
-        </view>
-        <view class="dish-item">
-          <view class="dish-info">
-            <view class="dish-title">午餐</view>
-            <view class="dish-desc">米饭 + 清蒸鱼 + 青菜</view>
-            <view class="dish-desc">12:00 | 750kcal</view>
+            <view class="dish-title">{{ record.mealType }}</view>
+            <view class="dish-desc">{{ record.foodName }}</view>
+            <view class="dish-desc">{{ record.time }} | {{ record.calories }}kcal</view>
           </view>
         </view>
         <view class="btn-container">
@@ -120,6 +231,22 @@ onLoad(() => {
       </view>
     </uni-card>
 
+    <!-- 今日饮水 -->
+    <uni-card title="今日饮水" :padding="false" class="custom-card">
+      <view class="card-content">
+        <view class="dish-item">
+          <view class="dish-info">
+            <view class="dish-title">饮水</view>
+            <view class="dish-desc">800ml</view>
+            <view class="dish-desc">09:00</view>
+          </view>
+        </view>
+        <view class="btn-container">
+          <button class="custom-btn" @tap="addWaterRecord">添加饮水记录</button>
+        </view>
+      </view>
+    </uni-card>
+
     <!-- 健康提醒 -->
     <uni-card title="健康提醒" :padding="false" class="custom-card">
       <view class="card-content">
@@ -132,11 +259,65 @@ onLoad(() => {
           <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
         </view>
       </view>
-    </uni-card>
-
-    <!-- 悬浮拍照按钮 -->
+    </uni-card> <!-- 悬浮拍照按钮 -->
     <view class="float-button" @tap="openCamera">
       <image src="@/static/icon/camera.png" class="camera-icon"></image>
+    </view>
+
+    <!-- 添加饮食记录弹窗 -->
+    <view v-if="showDietModal" class="modal-overlay" @tap="cancelDietRecord">
+      <view class="modal-container" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">添加饮食记录</text>
+          <text class="modal-close" @tap="cancelDietRecord">×</text>
+        </view>
+
+        <view class="modal-body">
+          <!-- 餐次选择 -->
+          <view class="form-group">
+            <text class="form-label">餐次</text>
+            <picker :value="mealTypes.indexOf(dietForm.mealType)" :range="mealTypes" @change="onMealTypeChange">
+              <view class="picker-item">
+                {{ dietForm.mealType }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+
+          <!-- 食物名称 -->
+          <view class="form-group">
+            <text class="form-label">食物名称</text>
+            <input v-model="dietForm.foodName" class="form-input" placeholder="请输入食物名称" maxlength="50" />
+          </view>
+
+          <!-- 卡路里 -->
+          <view class="form-group">
+            <text class="form-label">卡路里</text>
+            <input v-model="dietForm.calories" class="form-input" type="number" placeholder="留空则智能分析" />
+          </view>
+          <!-- 食物重量 -->
+          <view class="form-group">
+            <text class="form-label">食物重量</text>
+            <input v-model="dietForm.weight" class="form-input" type="number" placeholder="请填写食物重量(g)" />
+          </view>
+
+          <!-- 时间 -->
+          <view class="form-group">
+            <text class="form-label">时间</text>
+            <picker mode="time" :value="dietForm.time" @change="onTimeChange">
+              <view class="picker-item">
+                {{ dietForm.time || '选择时间' }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="modal-footer">
+          <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
+          <button class="confirm-btn" @tap="saveDietRecord">保存</button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -261,20 +442,304 @@ onLoad(() => {
   z-index: 999;
 }
 
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  /* 确保覆盖层在最上层 */
+  backdrop-filter: blur(2px);
+}
 
+.modal-container {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 400px;
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
 
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-/* 图标样式，如果引入了字体图标库 */
-.iconfont {
+.modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
   font-size: 24px;
-  font-family: "iconfont";
+  color: #999;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
-.icon-bell::before {
-  content: "\e64e"; /* 这个是示例，实际需要根据你的字体图标库中的编码 */
+.modal-close:active {
+  background-color: #f0f0f0;
 }
 
-.icon-camera::before {
-  content: "\e665"; /* 这个是示例，实际需要根据你的字体图标库中的编码 */
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #fafafa;
+  box-sizing: border-box;
+  height: 48px;
+  line-height: 24px;
+  /* 防止iOS缩放 */
+  -webkit-appearance: none;
+  appearance: none;
+  /* 确保输入框有统一的高度 */
+  display: flex;
+  align-items: center;
+}
+
+.form-input:focus {
+  border-color: #4CAF50;
+  background-color: white;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+/* 数字输入框特殊处理 */
+.form-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.picker-item {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  height: 48px;
+  box-sizing: border-box;
+  line-height: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.picker-item:active {
+  background-color: #e8f5e8;
+  border-color: #4CAF50;
+}
+
+.picker-arrow {
+  color: #999;
+  font-size: 12px;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  background-color: white;
+  position: sticky;
+  bottom: 0;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 14px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 重置按钮默认样式 */
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  /* 防止双击缩放 */
+  touch-action: manipulation;
+}
+
+.cancel-btn:active {
+  background-color: #f5f5f5;
+  transform: scale(0.98);
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: 14px 0;
+  border: none;
+  border-radius: 8px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 重置按钮默认样式 */
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  /* 防止双击缩放 */
+  touch-action: manipulation;
+}
+
+.confirm-btn:active {
+  background-color: #45a049;
+  transform: scale(0.98);
+}
+
+/* 响应式设计 - 小屏设备适配 */
+@media screen and (max-height: 600px) {
+  .modal-container {
+    min-height: auto;
+    max-height: calc(100vh - 20px);
+  }
+  
+  .modal-body {
+    padding: 15px 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+}
+
+/* 超小屏设备适配 */
+@media screen and (max-height: 500px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+  
+  .modal-container {
+    max-height: calc(100vh - 20px);
+  }
+  
+  .modal-header {
+    padding: 15px 20px;
+  }
+  
+  .modal-body {
+    padding: 10px 20px;
+  }
+  
+  .modal-footer {
+    padding: 12px 20px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* iPhone SE 等窄屏设备适配 */
+@media screen and (max-width: 320px) {
+  .modal-overlay {
+    padding: 15px;
+  }
+  
+  .modal-container {
+    max-width: 100%;
+  }
+  
+  .form-input, .picker-item {
+    font-size: 14px;
+    padding: 10px 12px;
+    height: 44px;
+  }
+  
+  .cancel-btn, .confirm-btn {
+    font-size: 14px;
+    min-height: 40px;
+  }
+}
+
+/* 全局按钮样式重置 - 确保按钮在所有设备上正常显示 */
+button {
+  border: none;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* 防止iOS Safari的按钮样式重置 */
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
 }
 </style>

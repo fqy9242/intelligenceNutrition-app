@@ -1,5 +1,4 @@
 const baseUrl = "http://localhost:8080" // 基础url
-
 // 获取完整URL
 export const getFullUrl = (url) => {
   // #ifdef H5
@@ -23,11 +22,7 @@ export const getFullUrl = (url) => {
   // #endif
   // 默认返回原始URL
   return url;
-};
-
-
-
-
+}
 // 设置请求拦截器
 const httpInterceptor = {
     invoke(options) {

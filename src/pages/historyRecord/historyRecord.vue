@@ -90,8 +90,8 @@ onLoad(() => {
         <view v-for="(record, index) in healthDataRecords" :key="index" class="record-item">
           <view class="dish-info">
             <view class="dish-title">{{ record.date }}</view>
-            <view class="dish-desc">体重：{{ record.weight }}</view>
-            <view class="dish-desc">身高：{{ record.height }}</view>
+            <view class="dish-desc">体重：{{ record.weight }}kg</view>
+            <view class="dish-desc">身高：{{ record.height }}cm</view>
             <view class="dish-desc">BMI：{{ record.bmi }}</view>
           </view>
         </view>
