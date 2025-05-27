@@ -3,9 +3,18 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
+import { getNextCheckPlanApi } from '@/apis/user.js'
+import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
-
 const recommendedCalories = ref(1800);
+// 获取下次体检时间
+const nextCheckDay = ref('');
+const getNextCheckDay = async () => {
+  const res = await getNextCheckPlanApi()
+  nextCheckDay.value = !res.data.physicalExaminationTime ? '暂无体检计划':
+   Math.ceil((new Date(res.data.physicalExaminationTime).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) 
+  // console.log('下次体检时间:', nextCheckDay.value);
+}
 const BMI = uni.getStorageSync('userInfo').bmi
 // 添加饮食记录
 const addDietRecord = () => {
@@ -53,6 +62,9 @@ const openCamera = () => {
     },
   })
 };
+onLoad(() => {
+  getNextCheckDay()
+})
 </script>
 
 <template>
@@ -117,7 +129,7 @@ const openCamera = () => {
         </view>
         <view class="suggestion-item">
           <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
-          <text class="suggestion-text">距离下次体检还有15天</text>
+          <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
         </view>
       </view>
     </uni-card>

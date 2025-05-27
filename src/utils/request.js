@@ -48,11 +48,7 @@ const httpInterceptor = {
         "source-client": "miniapp",
       };
       // 添加token请求头标识
-    //   const memberStore = useMemberStore();
-    //   const token = memberStore.profile?.token;
-    //   if (token) {
-    //     options.header.Authorization = token;
-    //   }
+        options.header.Authorization = uni.getStorageSync("token") || "";
     }
 } 
 uni.addInterceptor("request", httpInterceptor);
@@ -61,20 +57,21 @@ export const request = (options) => {
     uni.request({
       ...options,
       success(res) {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data)
-        } else if (res.statusCode === 401) {
+        if (res.data.code >= 200 && res.data.code < 300) {
+          resolve(res.data);
+        } else if (res.data.code === 401) {
           // token 失效
-        //   const memberStore = useMemberStore()
-        //   memberStore.clearProfile()
-          uni.navigateTo({ url: '/pages/login/login' })
-          reject(res)
+          // 清除本地存储的用户信息
+          uni.removeStorageSync("userInfo")
+          uni.removeStorageSync("token")
+          uni.navigateTo({ url: "/pages/login/login" })
+          reject(res);
         } else {
           uni.showToast({
-            icon: 'none',
-            title: (res.data).msg || '请求错误',
-          })
-          reject(res)
+            icon: "none",
+            title: res.data.msg || "请求错误",
+          });
+          reject(res);
         }
       },
       fail(res) {
@@ -86,4 +83,6 @@ export const request = (options) => {
       },
     })
   })
+
+
 }

@@ -2,7 +2,8 @@
 <!-- Date: 2025-05-14 -->
 <script setup>
 import { ref } from 'vue';
-
+import { getHealthHistoryApi } from '@/apis/user';
+import { onLoad } from '@dcloudio/uni-app';
 // 饮食记录数据
 const dietRecords = ref([
   {
@@ -40,18 +41,18 @@ const exerciseRecords = ref([
 ]);
 
 // 健康数据记录
-const healthDataRecords = ref([
-  {
-    date: '2024-03-15',
-    weight: '65kg',
-    bmi: '21.5'
-  },
-  {
-    date: '2024-03-14',
-    weight: '65.2kg',
-    bmi: '21.6'
-  }
-]);
+const healthDataRecords = ref([]);
+
+// 获取健康数据记录
+const getHealthHistory = async () => {
+  const res = await getHealthHistoryApi(uni.getStorageSync('userInfo').studentNumber)
+  healthDataRecords.value = res.data
+  console.log('健康数据记录:', healthDataRecords.value);
+  
+}
+onLoad(() => {
+  getHealthHistory()
+})
 </script>
 
 <template>
@@ -90,6 +91,7 @@ const healthDataRecords = ref([
           <view class="dish-info">
             <view class="dish-title">{{ record.date }}</view>
             <view class="dish-desc">体重：{{ record.weight }}</view>
+            <view class="dish-desc">身高：{{ record.height }}</view>
             <view class="dish-desc">BMI：{{ record.bmi }}</view>
           </view>
         </view>
