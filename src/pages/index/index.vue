@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi } from '@/apis/user.js'
+import { getNextCheckPlanApi, addDietRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -29,11 +29,13 @@ const getUserBMI = () => {
   }
 };
 
+
 // 饮食记录弹窗相关数据
 const showDietModal = ref(false);
 const dietForm = ref({
-  mealType: '早餐',
+  mealType: 0,
   foodName: '',
+  calories: '',
   weight: '',
   time: ''
 });
@@ -42,14 +44,14 @@ const dietForm = ref({
 const dietRecords = ref([
   {
     id: 1,
-    mealType: '早餐',
+    mealType: 0,
     foodName: '全麦面包 + 牛奶 + 水果',
     weight: 200,
     time: '08:30'
   },
   {
     id: 2,
-    mealType: '午餐',
+    mealType: 1,
     foodName: '米饭 + 清蒸鱼 + 青菜',
     calories: 750,
     time: '12:00'
@@ -59,14 +61,18 @@ const dietRecords = ref([
 // 餐次选项
 const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
 
-// 添加饮食记录
+// 根据数字获取餐次名称
+const getMealTypeName = (mealType) => {
+  return mealTypes[mealType] || mealTypes[0];
+};
+
+// 添加饮食记录按钮被点击
 const addDietRecord = () => {
   // 设置默认时间为当前时间
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   dietForm.value.time = `${hours}:${minutes}`;
-  
   showDietModal.value = true;
 }
 const addWaterRecord = () => {
@@ -77,7 +83,7 @@ const addWaterRecord = () => {
 };
 
 // 保存饮食记录
-const saveDietRecord = () => {
+const saveDietRecord = async () => {
   if (!dietForm.value.foodName.trim()) {
     uni.showToast({
       title: '请输入食物名称',
@@ -85,40 +91,46 @@ const saveDietRecord = () => {
     });
     return;
   }
-  
-  if (!dietForm.value.calories) {
+    if (!dietForm.value.weight) {
     uni.showToast({
-      title: '请输入卡路里',
+      title: '请输入食物重量',
       icon: 'none'
     });
     return;
-  }
-  
-  // 添加新记录
-  const newRecord = {
-    id: Date.now(),
-    mealType: dietForm.value.mealType,
-    foodName: dietForm.value.foodName,
-    calories: parseInt(dietForm.value.calories),
-    time: dietForm.value.time
-  };
-  
-  dietRecords.value.push(newRecord);
-  
-  // 重置表单
-  dietForm.value = {
-    mealType: '早餐',
-    foodName: '',
-    calories: '',
-    time: ''
-  };
-  
-  showDietModal.value = false;
-  
-  uni.showToast({
-    title: '添加成功',
-    icon: 'success'
-  });
+  }  
+      // 构造完整的日期时间字符串 (ISO 8601格式)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const fullDateTime = `${year}-${month}-${day}T${dietForm.value.time}:00`;
+    
+    // 调用API添加饮食记录
+    const res = await addDietRecordApi({
+      studentNumber: uni.getStorageSync('userInfo').studentNumber,
+      mealType: dietForm.value.mealType,
+      foodName: dietForm.value.foodName,
+      foodWeight: dietForm.value.weight,
+      foodCalorie: dietForm.value.calories,
+      createTime: fullDateTime
+    });
+    
+
+    // 重置表单
+    dietForm.value = {
+      mealType: 0,
+      foodName: '',
+      calories: '',
+      weight: '',
+      time: ''
+    };
+    
+    showDietModal.value = false;
+    
+    uni.showToast({
+      title: '添加成功',
+      icon: 'success'
+    });
 };
 
 // 取消添加
@@ -126,16 +138,17 @@ const cancelDietRecord = () => {
   showDietModal.value = false;
   // 重置表单
   dietForm.value = {
-    mealType: '早餐',
+    mealType: 0,
     foodName: '',
     calories: '',
+    weight: '',
     time: ''
   };
 };
 
 // 餐次选择事件
 const onMealTypeChange = (e) => {
-  dietForm.value.mealType = mealTypes[e.detail.value];
+  dietForm.value.mealType = parseInt(e.detail.value);
 };
 
 // 时间选择事件
@@ -201,12 +214,15 @@ onLoad(() => {
       </view>
     </view> <!-- 今日健康打卡 -->
     <uni-card title="今日健康打卡" :padding="false" class="custom-card">
-      <view class="card-content">
-        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
+      <view class="card-content">        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
           <view class="dish-info">
-            <view class="dish-title">{{ record.mealType }}</view>
+            <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
             <view class="dish-desc">{{ record.foodName }}</view>
-            <view class="dish-desc">{{ record.time }} | {{ record.calories }}kcal</view>
+            <view class="dish-desc">
+              {{ record.time }} 
+              <template v-if="record.weight">| {{ record.weight }}g</template>
+              <template v-if="record.calories">| {{ record.calories }}kcal</template>
+            </view>
           </view>
         </view>
         <view class="btn-container">
@@ -272,13 +288,12 @@ onLoad(() => {
           <text class="modal-close" @tap="cancelDietRecord">×</text>
         </view>
 
-        <view class="modal-body">
-          <!-- 餐次选择 -->
+        <view class="modal-body">          <!-- 餐次选择 -->
           <view class="form-group">
             <text class="form-label">餐次</text>
-            <picker :value="mealTypes.indexOf(dietForm.mealType)" :range="mealTypes" @change="onMealTypeChange">
+            <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
               <view class="picker-item">
-                {{ dietForm.mealType }}
+                {{ mealTypes[dietForm.mealType] }}
                 <text class="picker-arrow">▼</text>
               </view>
             </picker>

@@ -21,3 +21,11 @@ export const getHealthHistoryApi = (studentNumber) => {
         }
     })
 }
+// 添加饮食记录
+export const addDietRecordApi = (data) => {
+    return request({
+      url: "/client/user/dietaryRecord",
+      method: "post",
+      data
+    });
+}
