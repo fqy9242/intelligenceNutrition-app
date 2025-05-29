@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi } from '@/apis/user'
+import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -11,23 +11,95 @@ const recommendedCalories = ref(1800);
 const nextCheckDay = ref('');
 const getNextCheckDay = async () => {
   const res = await getNextCheckPlanApi()
-  nextCheckDay.value = !res.data.physicalExaminationTime ? '暂无体检计划':
-   Math.ceil((new Date(res.data.physicalExaminationTime).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) 
+  nextCheckDay.value = !res.data.physicalExaminationTime ? '暂无体检计划' :
+    Math.ceil((new Date(res.data.physicalExaminationTime).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
   // console.log('下次体检时间:', nextCheckDay.value);
 }
 const BMI = ref('--');
-// 安全获取BMI数据
+// 获取BMI数据
 const getUserBMI = () => {
-  try {
-    const userInfo = uni.getStorageSync('userInfo');
-    if (userInfo && userInfo.bmi) {
-      BMI.value = userInfo.bmi;
-    }
-  } catch (error) {
-    console.error('获取BMI数据失败:', error);
-    BMI.value = '--';
+  const userInfo = uni.getStorageSync('userInfo');
+  if (userInfo && userInfo.bmi) {
+    BMI.value = userInfo.bmi;
   }
-};
+}
+
+
+// 获取学生今日饮食记录
+const getTodayDietRecord = async () => {
+  // 调用后端接口
+  const res = await getTodayDietRecordApi(uni.getStorageSync('userInfo').studentNumber);
+  const records = [];
+  const data = res.data;
+
+  // 处理早餐数据
+  if (data.breakfast) {
+    records.push({
+      id: Date.now() + 1,
+      mealType: 0, // 早餐
+      foodName: data.breakfast.foodList.join(' + '),
+      weight: data.breakfast.totalWeight,
+      calories: data.breakfast.totalCalories,
+      time: new Date(data.breakfast.mealTime).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    });
+  }
+
+  // 处理午餐数据
+  if (data.lunch) {
+    records.push({
+      id: Date.now() + 2,
+      mealType: 1, // 午餐
+      foodName: data.lunch.foodList.join(' + '),
+      weight: data.lunch.totalWeight,
+      calories: data.lunch.totalCalories,
+      time: new Date(data.lunch.mealTime).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    });
+  }
+
+  // 处理晚餐数据
+  if (data.dinner) {
+    records.push({
+      id: Date.now() + 3,
+      mealType: 2, // 晚餐
+      foodName: data.dinner.foodList.join(' + '),
+      weight: data.dinner.totalWeight,
+      calories: data.dinner.totalCalories,
+      time: new Date(data.dinner.mealTime).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    });
+  }
+
+  // 处理加餐数据
+  if (data.other) {
+    records.push({
+      id: Date.now() + 4,
+      mealType: 3, // 加餐
+      foodName: data.other.foodList.join(' + '),
+      weight: data.other.totalWeight,
+      calories: data.other.totalCalories,
+      time: new Date(data.other.mealTime).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    });
+  }
+
+  // 更新饮食记录列表
+  dietRecords.value = records;
+
+}
 
 
 // 饮食记录弹窗相关数据
@@ -41,22 +113,7 @@ const dietForm = ref({
 });
 
 // 饮食记录列表
-const dietRecords = ref([
-  {
-    id: 1,
-    mealType: 0,
-    foodName: '全麦面包 + 牛奶 + 水果',
-    weight: 200,
-    time: '08:30'
-  },
-  {
-    id: 2,
-    mealType: 1,
-    foodName: '米饭 + 清蒸鱼 + 青菜',
-    calories: 750,
-    time: '12:00'
-  }
-]);
+const dietRecords = ref([]);
 
 // 餐次选项
 const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
@@ -91,46 +148,49 @@ const saveDietRecord = async () => {
     });
     return;
   }
-    if (!dietForm.value.weight) {
+  if (!dietForm.value.weight) {
     uni.showToast({
       title: '请输入食物重量',
       icon: 'none'
     });
     return;
-  }  
-      // 构造完整的日期时间字符串 (ISO 8601格式)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const fullDateTime = `${year}-${month}-${day}T${dietForm.value.time}:00`;
-    
-    // 调用API添加饮食记录
-    const res = await addDietRecordApi({
-      studentNumber: uni.getStorageSync('userInfo').studentNumber,
-      mealType: dietForm.value.mealType,
-      foodName: dietForm.value.foodName,
-      foodWeight: dietForm.value.weight,
-      foodCalorie: dietForm.value.calories,
-      createTime: fullDateTime
-    });
-    
+  }
+  // 构造完整的日期时间字符串 (ISO 8601格式)
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const fullDateTime = `${year}-${month}-${day}T${dietForm.value.time}:00`;
 
-    // 重置表单
-    dietForm.value = {
-      mealType: 0,
-      foodName: '',
-      calories: '',
-      weight: '',
-      time: ''
-    };
-    
-    showDietModal.value = false;
-    
-    uni.showToast({
-      title: '添加成功',
-      icon: 'success'
-    });
+  // 调用API添加饮食记录
+  const res = await addDietRecordApi({
+    studentNumber: uni.getStorageSync('userInfo').studentNumber,
+    mealType: dietForm.value.mealType,
+    foodName: dietForm.value.foodName,
+    foodWeight: dietForm.value.weight,
+    foodCalorie: dietForm.value.calories,
+    createTime: fullDateTime
+  });
+
+
+  // 重置表单
+  dietForm.value = {
+    mealType: 0,
+    foodName: '',
+    calories: '',
+    weight: '',
+    time: ''
+  };
+
+  showDietModal.value = false;
+
+  uni.showToast({
+    title: '添加成功',
+    icon: 'success'
+  });
+
+  // 重新获取今日饮食记录
+  getTodayDietRecord();
 };
 
 // 取消添加
@@ -175,7 +235,7 @@ const openCamera = () => {
       uni.showLoading({
         title: '识别中...'
       });
-      
+
       // 调用AI识别接口
       RecognizeFoodApi(tempFilePath).then(result => {
         uni.hideLoading();
@@ -185,7 +245,7 @@ const openCamera = () => {
           title: '识别成功',
           icon: 'success'
         });
-        
+
         // 跳转到食物识别结果页面
         uni.navigateTo({
           url: '/pages/foodRecognition/foodRecognition?image=' + encodeURIComponent(tempFilePath) + '&result=' + encodeURIComponent(JSON.stringify(result))
@@ -197,6 +257,7 @@ const openCamera = () => {
 onLoad(() => {
   getNextCheckDay();
   getUserBMI();
+  getTodayDietRecord(); // 加载今日饮食记录
 })
 </script>
 
@@ -214,12 +275,13 @@ onLoad(() => {
       </view>
     </view> <!-- 今日健康打卡 -->
     <uni-card title="今日健康打卡" :padding="false" class="custom-card">
-      <view class="card-content">        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
+      <view class="card-content">
+        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
           <view class="dish-info">
             <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
             <view class="dish-desc">{{ record.foodName }}</view>
             <view class="dish-desc">
-              {{ record.time }} 
+              {{ record.time }}
               <template v-if="record.weight">| {{ record.weight }}g</template>
               <template v-if="record.calories">| {{ record.calories }}kcal</template>
             </view>
@@ -288,7 +350,7 @@ onLoad(() => {
           <text class="modal-close" @tap="cancelDietRecord">×</text>
         </view>
 
-        <view class="modal-body">          <!-- 餐次选择 -->
+        <view class="modal-body"> <!-- 餐次选择 -->
           <view class="form-group">
             <text class="form-label">餐次</text>
             <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
@@ -342,6 +404,7 @@ onLoad(() => {
   max-width: 100%;
   max-height: 100%;
 }
+
 .page-container {
   padding: 15px;
   background-color: #f5f5f5;
@@ -679,11 +742,11 @@ onLoad(() => {
     min-height: auto;
     max-height: calc(100vh - 20px);
   }
-  
+
   .modal-body {
     padding: 15px 20px;
   }
-  
+
   .form-group {
     margin-bottom: 15px;
   }
@@ -694,19 +757,19 @@ onLoad(() => {
   .modal-overlay {
     padding: 10px;
   }
-  
+
   .modal-container {
     max-height: calc(100vh - 20px);
   }
-  
+
   .modal-header {
     padding: 15px 20px;
   }
-  
+
   .modal-body {
     padding: 10px 20px;
   }
-  
+
   .modal-footer {
     padding: 12px 20px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
@@ -718,18 +781,20 @@ onLoad(() => {
   .modal-overlay {
     padding: 15px;
   }
-  
+
   .modal-container {
     max-width: 100%;
   }
-  
-  .form-input, .picker-item {
+
+  .form-input,
+  .picker-item {
     font-size: 14px;
     padding: 10px 12px;
     height: 44px;
   }
-  
-  .cancel-btn, .confirm-btn {
+
+  .cancel-btn,
+  .confirm-btn {
     font-size: 14px;
     min-height: 40px;
   }
