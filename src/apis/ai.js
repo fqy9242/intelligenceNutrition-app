@@ -10,9 +10,24 @@ export const RecognizeFoodApi = (tempFilePath) => {
       filePath: tempFilePath,
       name: 'image', 
       success: (uploadRes) => {
-          const result = JSON.parse(uploadRes.data);
-          resolve(result);
+        try {
+          console.log('上传响应:', uploadRes);
+          if (uploadRes.statusCode === 200) {
+            const result = JSON.parse(uploadRes.data);
+            console.log('解析后的结果:', result);
+            resolve(result);
+          } else {
+            reject(new Error('上传失败，状态码：' + uploadRes.statusCode));
+          }
+        } catch (error) {
+          console.error('解析响应数据失败:', error);
+          reject(error);
+        }
       },
+      fail: (error) => {
+        console.error('上传文件失败:', error);
+        reject(error);
+      }
     });
   });
 };

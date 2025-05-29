@@ -240,19 +240,62 @@ const openCamera = () => {
       RecognizeFoodApi(tempFilePath).then(result => {
         uni.hideLoading();
         console.log('识别结果:', result);
-        // 识别成功后的处理
+        
+        // 先显示识别成功提示
         uni.showToast({
           title: '识别成功',
-          icon: 'success'
+          icon: 'success',
+          duration: 1000
         });
-
-        // 跳转到食物识别结果页面
-        uni.navigateTo({
-          url: '/pages/foodRecognition/foodRecognition?image=' + encodeURIComponent(tempFilePath) + '&result=' + encodeURIComponent(JSON.stringify(result))
+        
+        // 延迟跳转，确保 toast 显示完成
+        setTimeout(() => {
+          // 使用 reLaunch 替代 navigateTo，避免页面栈问题
+          const imageParam = encodeURIComponent(tempFilePath);
+          const resultParam = encodeURIComponent(JSON.stringify(result));
+          
+          uni.navigateTo({
+            url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`,
+            success: () => {
+              console.log('页面跳转成功');
+            },
+            fail: (err) => {
+              console.error('页面跳转失败:', err);
+              // 如果 navigateTo 失败，尝试使用 redirectTo
+              uni.redirectTo({
+                url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`,
+                success: () => {
+                  console.log('使用 redirectTo 跳转成功');
+                },
+                fail: (redirectErr) => {
+                  console.error('redirectTo 也失败:', redirectErr);
+                  uni.showToast({
+                    title: '页面跳转失败',
+                    icon: 'error'
+                  });
+                }
+              });
+            }
+          });
+        }, 1200);
+        
+      }).catch(error => {
+        uni.hideLoading();
+        console.error('识别失败:', error);
+        uni.showToast({
+          title: '识别失败，请重试',
+          icon: 'error'
         });
-      })
+      });
     },
-  })
+    fail: function (err) {
+      console.error('选择图片失败:', err);
+      uni.showToast({
+        title: '选择图片失败',
+        icon: 'error'
+      });
+    }
+  });
 };
 onLoad(() => {
   getNextCheckDay();
