@@ -15,8 +15,25 @@ const mealTypes = [
   { label: '加餐', value: 3 }
 ];
 
-// 选中的餐次
-const selectedMealType = ref(0);
+// 自动获取当前时间对应的餐次类型
+const getAutoMealType = () => {
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // 根据时间自动判断餐次
+  if (hour >= 6 && hour < 11) {
+    return 0; // 早餐 (6:00-10:59)
+  } else if (hour >= 11 && hour < 15) {
+    return 1; // 午餐 (11:00-14:59)
+  } else if (hour >= 17 && hour < 21) {
+    return 2; // 晚餐 (17:00-20:59)
+  } else {
+    return 3; // 加餐 (其他时间)
+  }
+};
+
+// 选中的餐次 - 默认根据当前时间自动选择
+const selectedMealType = ref(getAutoMealType());
 
 // 食物重量
 const foodWeight = ref(100); // 默认100g
