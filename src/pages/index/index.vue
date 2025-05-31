@@ -321,10 +321,10 @@ const onRefresherrefresh = async () => {
 </script>
 
 <template>
-  <!-- 滚动容器 -->
-  <scroll-view scroll-y class="scroll-container" refresher-enabled @refresherrefresh="onRefresherrefresh"
-    :refresher-triggered="isTriggered">
-    <view class="page-container">
+  <view class="page-container">
+    <!-- 滚动容器 -->
+    <scroll-view scroll-y class="scroll-container" refresher-enabled @refresherrefresh="onRefresherrefresh"
+      :refresher-triggered="isTriggered">
       <!-- 健康统计卡片 -->
       <view class="health-stats">
         <view class="stat-card">
@@ -399,66 +399,69 @@ const onRefresherrefresh = async () => {
             <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
           </view>
         </view>
-      </uni-card> <!-- 悬浮拍照按钮 -->
-      <view class="float-button" @tap="openCamera">
-        <image src="@/static/icon/camera.png" class="camera-icon"></image>
-      </view>
+      </uni-card>
 
-      <!-- 添加饮食记录弹窗 -->
-      <view v-if="showDietModal" class="modal-overlay" @tap="cancelDietRecord">
-        <view class="modal-container" @tap.stop>
-          <view class="modal-header">
-            <text class="modal-title">添加饮食记录</text>
-            <text class="modal-close" @tap="cancelDietRecord">×</text>
+
+    </scroll-view>
+    <!-- 悬浮拍照按钮 -->
+    <view class="float-button" @tap="openCamera">
+      <image src="@/static/icon/camera.png" class="camera-icon"></image>
+    </view>
+
+    <!-- 添加饮食记录弹窗 -->
+    <view v-if="showDietModal" class="modal-overlay" @tap="cancelDietRecord">
+      <view class="modal-container" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">添加饮食记录</text>
+          <text class="modal-close" @tap="cancelDietRecord">×</text>
+        </view>
+
+        <view class="modal-body"> <!-- 餐次选择 -->
+          <view class="form-group">
+            <text class="form-label">餐次</text>
+            <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
+              <view class="picker-item">
+                {{ mealTypes[dietForm.mealType] }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
           </view>
 
-          <view class="modal-body"> <!-- 餐次选择 -->
-            <view class="form-group">
-              <text class="form-label">餐次</text>
-              <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
-                <view class="picker-item">
-                  {{ mealTypes[dietForm.mealType] }}
-                  <text class="picker-arrow">▼</text>
-                </view>
-              </picker>
-            </view>
-
-            <!-- 食物名称 -->
-            <view class="form-group">
-              <text class="form-label">食物名称</text>
-              <input v-model="dietForm.foodName" class="form-input" placeholder="请输入食物名称" maxlength="50" />
-            </view>
-
-            <!-- 卡路里 -->
-            <view class="form-group">
-              <text class="form-label">卡路里</text>
-              <input v-model="dietForm.calories" class="form-input" type="number" placeholder="留空则智能分析" />
-            </view>
-            <!-- 食物重量 -->
-            <view class="form-group">
-              <text class="form-label">食物重量</text>
-              <input v-model="dietForm.weight" class="form-input" type="number" placeholder="请填写食物重量(g)" />
-            </view>
-
-            <!-- 时间 -->
-            <view class="form-group">
-              <text class="form-label">时间</text>
-              <picker mode="time" :value="dietForm.time" @change="onTimeChange">
-                <view class="picker-item">
-                  {{ dietForm.time || '选择时间' }}
-                  <text class="picker-arrow">▼</text>
-                </view>
-              </picker>
-            </view>
+          <!-- 食物名称 -->
+          <view class="form-group">
+            <text class="form-label">食物名称</text>
+            <input v-model="dietForm.foodName" class="form-input" placeholder="请输入食物名称" maxlength="50" />
           </view>
-          <view class="modal-footer">
-            <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
-            <button class="confirm-btn" @tap="saveDietRecord">保存</button>
+
+          <!-- 卡路里 -->
+          <view class="form-group">
+            <text class="form-label">卡路里</text>
+            <input v-model="dietForm.calories" class="form-input" type="number" placeholder="留空则智能分析" />
           </view>
+          <!-- 食物重量 -->
+          <view class="form-group">
+            <text class="form-label">食物重量</text>
+            <input v-model="dietForm.weight" class="form-input" type="number" placeholder="请填写食物重量(g)" />
+          </view>
+
+          <!-- 时间 -->
+          <view class="form-group">
+            <text class="form-label">时间</text>
+            <picker mode="time" :value="dietForm.time" @change="onTimeChange">
+              <view class="picker-item">
+                {{ dietForm.time || '选择时间' }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
+          <button class="confirm-btn" @tap="saveDietRecord">保存</button>
         </view>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <style scoped>
@@ -468,12 +471,14 @@ const onRefresherrefresh = async () => {
 }
 
 .page-container {
-  padding: 15px;
   background-color: #f5f5f5;
-  min-height: calc(100vh - 30px);
+  height: 100vh;
+  overflow: hidden;
 }
 .scroll-container {
-  height: 100vh;
+  height: 100%;
+  padding: 15px;
+  box-sizing: border-box;
 }
 .health-stats {
   display: grid;
