@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi } from '@/apis/user'
+import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -114,6 +114,13 @@ const dietForm = ref({
 
 // 饮食记录列表
 const dietRecords = ref([]);
+// 今天的饮水记录列表
+const waterRecords = ref([]);
+// 获取今天的饮水记录
+const getWaterRecord = async () => {
+  const res = await getWaterRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
+  waterRecords.valu = res.data
+}
 
 // 餐次选项
 const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
@@ -301,6 +308,7 @@ onLoad(() => {
   getNextCheckDay()
   getUserBMI()
   getTodayDietRecord() // 加载今日饮食记录
+  getWaterRecord() // 加载今日饮水记录
 })
 // 下拉刷新状态
 const isTriggered = ref(false);
@@ -312,7 +320,8 @@ const onRefresherrefresh = async () => {
   await Promise.all([
     getNextCheckDay(),
     Promise.resolve(getUserBMI()),
-    getTodayDietRecord()
+    getTodayDietRecord(),
+    getWaterRecord()
   ]);
   // 关闭下拉刷新动画
   isTriggered.value = false;
@@ -375,10 +384,10 @@ const onRefresherrefresh = async () => {
       <uni-card title="今日饮水" :padding="false" class="custom-card">
         <view class="card-content">
           <view class="dish-item">
-            <view class="dish-info">
+            <view class="dish-info" v-for="(record, index) in waterRecords" :key="index">
               <view class="dish-title">饮水</view>
-              <view class="dish-desc">800ml</view>
-              <view class="dish-desc">09:00</view>
+              <view class="dish-desc">{{ record.capacity }}</view>
+              <view class="dish-desc">{{ record.time }}</view>
             </view>
           </view>
           <view class="btn-container">

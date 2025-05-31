@@ -35,3 +35,13 @@ export const getTodayDietRecordApi = (studentNumber) => {
       url: `/client/user/dietaryRecord/${studentNumber}`,
     })
 }
+// 获取饮水记录
+export const getWaterRecordApi = (studentNumber, onlyToday) => {
+    return request({
+      url: "/client/user/drinkingWaterRecord",
+      data: {
+        studentNumber,
+        onlyToday
+      }
+    })
+}
