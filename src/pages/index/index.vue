@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi } from '@/apis/user'
+import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi, addWaterRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -31,7 +31,6 @@ const getTodayDietRecord = async () => {
   const res = await getTodayDietRecordApi(uni.getStorageSync('userInfo').studentNumber);
   const records = [];
   const data = res.data;
-
   // 处理早餐数据
   if (data.breakfast) {
     records.push({
@@ -40,11 +39,7 @@ const getTodayDietRecord = async () => {
       foodName: data.breakfast.foodList.join(' + '),
       weight: data.breakfast.totalWeight,
       calories: data.breakfast.totalCalories,
-      time: new Date(data.breakfast.mealTime).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      time: formatTimeOnly(data.breakfast.mealTime)
     });
   }
 
@@ -56,11 +51,7 @@ const getTodayDietRecord = async () => {
       foodName: data.lunch.foodList.join(' + '),
       weight: data.lunch.totalWeight,
       calories: data.lunch.totalCalories,
-      time: new Date(data.lunch.mealTime).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      time: formatTimeOnly(data.lunch.mealTime)
     });
   }
 
@@ -72,11 +63,7 @@ const getTodayDietRecord = async () => {
       foodName: data.dinner.foodList.join(' + '),
       weight: data.dinner.totalWeight,
       calories: data.dinner.totalCalories,
-      time: new Date(data.dinner.mealTime).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      time: formatTimeOnly(data.dinner.mealTime)
     });
   }
 
@@ -88,11 +75,7 @@ const getTodayDietRecord = async () => {
       foodName: data.other.foodList.join(' + '),
       weight: data.other.totalWeight,
       calories: data.other.totalCalories,
-      time: new Date(data.other.mealTime).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      time: formatTimeOnly(data.other.mealTime)
     });
   }
 
@@ -112,6 +95,13 @@ const dietForm = ref({
   time: ''
 });
 
+// 饮水记录弹窗相关数据
+const showWaterModal = ref(false);
+const waterForm = ref({
+  capacity: '',
+  time: ''
+});
+
 // 饮食记录列表
 const dietRecords = ref([]);
 // 今天的饮水记录列表
@@ -119,7 +109,7 @@ const waterRecords = ref([]);
 // 获取今天的饮水记录
 const getWaterRecord = async () => {
   const res = await getWaterRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
-  waterRecords.valu = res.data
+  waterRecords.value = res.data
 }
 
 // 餐次选项
@@ -128,6 +118,21 @@ const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
 // 根据数字获取餐次名称
 const getMealTypeName = (mealType) => {
   return mealTypes[mealType] || mealTypes[0];
+};
+
+// 格式化时间为 HH:MM 格式的通用函数
+const formatTimeOnly = (dateTimeString) => {
+  if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    if (isNaN(date.getTime())) {
+      // 如果是无效日期，返回原字符串
+      return dateTimeString;
+    }
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
 };
 
 // 添加饮食记录按钮被点击
@@ -140,10 +145,12 @@ const addDietRecord = () => {
   showDietModal.value = true;
 }
 const addWaterRecord = () => {
-  uni.showToast({
-    title: '功能开发中',
-    icon: 'none'
-  });
+  // 设置默认时间为当前时间
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  waterForm.value.time = `${hours}:${minutes}`;
+  showWaterModal.value = true;
 };
 
 // 保存饮食记录
@@ -223,6 +230,58 @@ const onTimeChange = (e) => {
   dietForm.value.time = e.detail.value;
 };
 
+// 饮水记录时间选择事件
+const onWaterTimeChange = (e) => {
+  waterForm.value.time = e.detail.value;
+};
+
+// 保存饮水记录
+const saveWaterRecord = async () => {
+  if (!waterForm.value.capacity) {
+    uni.showToast({
+      title: '请输入饮水容量',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 构造完整的日期时间字符串 (ISO 8601格式)
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const fullDateTime = `${year}-${month}-${day}T${waterForm.value.time}:00`;
+    // 调用API添加饮水记录
+    await addWaterRecordApi({
+      studentNumber: uni.getStorageSync('userInfo').studentNumber,
+      capacity: `${waterForm.value.capacity}ml`,
+      drinkingTime: fullDateTime
+    });
+    // 重置表单
+    waterForm.value = {
+      capacity: '',
+      time: ''
+    };
+    showWaterModal.value = false;
+    uni.showToast({
+      title: '添加成功',
+      icon: 'success'
+    });
+
+    // 重新获取今日饮水记录
+    getWaterRecord();
+};
+
+// 取消添加饮水记录
+const cancelWaterRecord = () => {
+  showWaterModal.value = false;
+  // 重置表单
+  waterForm.value = {
+    capacity: '',
+    time: ''
+  };
+};
+
 // 添加运动记录
 const addExerciseRecord = () => {
   uni.showToast({
@@ -257,50 +316,16 @@ const openCamera = () => {
         
         // 延迟跳转，确保 toast 显示完成
         setTimeout(() => {
-          // 使用 reLaunch 替代 navigateTo，避免页面栈问题
           const imageParam = encodeURIComponent(tempFilePath);
           const resultParam = encodeURIComponent(JSON.stringify(result));
-          
           uni.navigateTo({
             url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`,
             success: () => {
               console.log('页面跳转成功');
-            },
-            fail: (err) => {
-              console.error('页面跳转失败:', err);
-              // 如果 navigateTo 失败，尝试使用 redirectTo
-              uni.redirectTo({
-                url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`,
-                success: () => {
-                  console.log('使用 redirectTo 跳转成功');
-                },
-                fail: (redirectErr) => {
-                  console.error('redirectTo 也失败:', redirectErr);
-                  uni.showToast({
-                    title: '页面跳转失败',
-                    icon: 'error'
-                  });
-                }
-              });
             }
           });
         }, 1200);
-        
-      }).catch(error => {
-        uni.hideLoading();
-        console.error('识别失败:', error);
-        uni.showToast({
-          title: '识别失败，请重试',
-          icon: 'error'
-        });
-      });
-    },
-    fail: function (err) {
-      console.error('选择图片失败:', err);
-      uni.showToast({
-        title: '选择图片失败',
-        icon: 'error'
-      });
+      })
     }
   });
 };
@@ -378,16 +403,13 @@ const onRefresherrefresh = async () => {
             <button class="custom-btn" @tap="addExerciseRecord">添加运动记录</button>
           </view>
         </view>
-      </uni-card>
-
-      <!-- 今日饮水 -->
+      </uni-card>      <!-- 今日饮水 -->
       <uni-card title="今日饮水" :padding="false" class="custom-card">
-        <view class="card-content">
-          <view class="dish-item">
-            <view class="dish-info" v-for="(record, index) in waterRecords" :key="index">
+        <view class="card-content">          <view v-for="(record, index) in waterRecords" :key="index" class="dish-item">
+            <view class="dish-info">
               <view class="dish-title">饮水</view>
               <view class="dish-desc">{{ record.capacity }}</view>
-              <view class="dish-desc">{{ record.time }}</view>
+              <view class="dish-desc">{{ formatTimeOnly(record.drinkingTime) }}</view>
             </view>
           </view>
           <view class="btn-container">
@@ -463,10 +485,43 @@ const onRefresherrefresh = async () => {
               </view>
             </picker>
           </view>
-        </view>
-        <view class="modal-footer">
+        </view>        <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
           <button class="confirm-btn" @tap="saveDietRecord">保存</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 添加饮水记录弹窗 -->
+    <view v-if="showWaterModal" class="modal-overlay" @tap="cancelWaterRecord">
+      <view class="modal-container" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">添加饮水记录</text>
+          <text class="modal-close" @tap="cancelWaterRecord">×</text>
+        </view>
+
+        <view class="modal-body">
+          <!-- 饮水容量 -->
+          <view class="form-group">
+            <text class="form-label">饮水容量</text>
+            <input v-model="waterForm.capacity" class="form-input" type="number" placeholder="请输入饮水容量(ml)" />
+          </view>
+
+          <!-- 时间 -->
+          <view class="form-group">
+            <text class="form-label">时间</text>
+            <picker mode="time" :value="waterForm.time" @change="onWaterTimeChange">
+              <view class="picker-item">
+                {{ waterForm.time || '选择时间' }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+        
+        <view class="modal-footer">
+          <button class="cancel-btn" @tap="cancelWaterRecord">取消</button>
+          <button class="confirm-btn" @tap="saveWaterRecord">保存</button>
         </view>
       </view>
     </view>

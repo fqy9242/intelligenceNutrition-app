@@ -45,3 +45,11 @@ export const getWaterRecordApi = (studentNumber, onlyToday) => {
       }
     })
 }
+// 添加饮水记录
+export const addWaterRecordApi = (data) => {
+    return request({
+      url: "/client/user/drinkingWaterRecord",
+      method: "post",
+      data
+    })
+}
