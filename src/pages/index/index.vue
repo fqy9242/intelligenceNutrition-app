@@ -298,148 +298,167 @@ const openCamera = () => {
   });
 };
 onLoad(() => {
-  getNextCheckDay();
-  getUserBMI();
-  getTodayDietRecord(); // 加载今日饮食记录
+  getNextCheckDay()
+  getUserBMI()
+  getTodayDietRecord() // 加载今日饮食记录
 })
+// 下拉刷新状态
+const isTriggered = ref(false);
+// 下拉刷新被触发
+const onRefresherrefresh = async () => {
+  // console.log("下拉刷新被触发")
+  // 打开下拉刷新动画
+  isTriggered.value = true;
+  await Promise.all([
+    getNextCheckDay(),
+    Promise.resolve(getUserBMI()),
+    getTodayDietRecord()
+  ]);
+  // 关闭下拉刷新动画
+  isTriggered.value = false;
+  
+}
 </script>
 
 <template>
-  <view class="page-container">
-    <!-- 健康统计卡片 -->
-    <view class="health-stats">
-      <view class="stat-card">
-        <view class="stat-value">{{ BMI }}</view>
-        <view class="stat-label">BMI指数</view>
-      </view>
-      <view class="stat-card">
-        <view class="stat-value">{{ recommendedCalories }}</view>
-        <view class="stat-label">今日推荐摄入(kcal)</view>
-      </view>
-    </view> <!-- 今日健康打卡 -->
-    <uni-card title="今日健康打卡" :padding="false" class="custom-card">
-      <view class="card-content">
-        <view v-for="record in dietRecords" :key="record.id" class="dish-item">
-          <view class="dish-info">
-            <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
-            <view class="dish-desc">{{ record.foodName }}</view>
-            <view class="dish-desc">
-              {{ record.time }}
-              <template v-if="record.weight">| {{ record.weight }}g</template>
-              <template v-if="record.calories">| {{ record.calories }}kcal</template>
+  <!-- 滚动容器 -->
+  <scroll-view scroll-y class="scroll-container" refresher-enabled @refresherrefresh="onRefresherrefresh"
+    :refresher-triggered="isTriggered">
+    <view class="page-container">
+      <!-- 健康统计卡片 -->
+      <view class="health-stats">
+        <view class="stat-card">
+          <view class="stat-value">{{ BMI }}</view>
+          <view class="stat-label">BMI指数</view>
+        </view>
+        <view class="stat-card">
+          <view class="stat-value">{{ recommendedCalories }}</view>
+          <view class="stat-label">今日推荐摄入(kcal)</view>
+        </view>
+      </view> <!-- 今日健康打卡 -->
+      <uni-card title="今日健康打卡" :padding="false" class="custom-card">
+        <view class="card-content">
+          <view v-for="record in dietRecords" :key="record.id" class="dish-item">
+            <view class="dish-info">
+              <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
+              <view class="dish-desc">{{ record.foodName }}</view>
+              <view class="dish-desc">
+                {{ record.time }}
+                <template v-if="record.weight">| {{ record.weight }}g</template>
+                <template v-if="record.calories">| {{ record.calories }}kcal</template>
+              </view>
             </view>
           </view>
-        </view>
-        <view class="btn-container">
-          <button class="custom-btn" @tap="addDietRecord">添加饮食记录</button>
-        </view>
-      </view>
-    </uni-card>
-
-    <!-- 今日运动 -->
-    <uni-card title="今日运动" :padding="false" class="custom-card">
-      <view class="card-content">
-        <view class="dish-item">
-          <view class="dish-info">
-            <view class="dish-title">晨跑</view>
-            <view class="dish-desc">3公里 | 消耗200kcal</view>
-            <view class="dish-desc">07:00</view>
+          <view class="btn-container">
+            <button class="custom-btn" @tap="addDietRecord">添加饮食记录</button>
           </view>
         </view>
-        <view class="btn-container">
-          <button class="custom-btn" @tap="addExerciseRecord">添加运动记录</button>
-        </view>
-      </view>
-    </uni-card>
+      </uni-card>
 
-    <!-- 今日饮水 -->
-    <uni-card title="今日饮水" :padding="false" class="custom-card">
-      <view class="card-content">
-        <view class="dish-item">
-          <view class="dish-info">
-            <view class="dish-title">饮水</view>
-            <view class="dish-desc">800ml</view>
-            <view class="dish-desc">09:00</view>
+      <!-- 今日运动 -->
+      <uni-card title="今日运动" :padding="false" class="custom-card">
+        <view class="card-content">
+          <view class="dish-item">
+            <view class="dish-info">
+              <view class="dish-title">晨跑</view>
+              <view class="dish-desc">3公里 | 消耗200kcal</view>
+              <view class="dish-desc">07:00</view>
+            </view>
+          </view>
+          <view class="btn-container">
+            <button class="custom-btn" @tap="addExerciseRecord">添加运动记录</button>
           </view>
         </view>
-        <view class="btn-container">
-          <button class="custom-btn" @tap="addWaterRecord">添加饮水记录</button>
-        </view>
-      </view>
-    </uni-card>
+      </uni-card>
 
-    <!-- 健康提醒 -->
-    <uni-card title="健康提醒" :padding="false" class="custom-card">
-      <view class="card-content">
-        <view class="suggestion-item">
-          <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
-          <text class="suggestion-text">记得补充水分，今日已饮水800ml</text>
+      <!-- 今日饮水 -->
+      <uni-card title="今日饮水" :padding="false" class="custom-card">
+        <view class="card-content">
+          <view class="dish-item">
+            <view class="dish-info">
+              <view class="dish-title">饮水</view>
+              <view class="dish-desc">800ml</view>
+              <view class="dish-desc">09:00</view>
+            </view>
+          </view>
+          <view class="btn-container">
+            <button class="custom-btn" @tap="addWaterRecord">添加饮水记录</button>
+          </view>
         </view>
-        <view class="suggestion-item">
-          <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
-          <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
+      </uni-card>
+
+      <!-- 健康提醒 -->
+      <uni-card title="健康提醒" :padding="false" class="custom-card">
+        <view class="card-content">
+          <view class="suggestion-item">
+            <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
+            <text class="suggestion-text">记得补充水分，今日已饮水800ml</text>
+          </view>
+          <view class="suggestion-item">
+            <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
+            <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
+          </view>
+        </view>
+      </uni-card> <!-- 悬浮拍照按钮 -->
+      <view class="float-button" @tap="openCamera">
+        <image src="@/static/icon/camera.png" class="camera-icon"></image>
+      </view>
+
+      <!-- 添加饮食记录弹窗 -->
+      <view v-if="showDietModal" class="modal-overlay" @tap="cancelDietRecord">
+        <view class="modal-container" @tap.stop>
+          <view class="modal-header">
+            <text class="modal-title">添加饮食记录</text>
+            <text class="modal-close" @tap="cancelDietRecord">×</text>
+          </view>
+
+          <view class="modal-body"> <!-- 餐次选择 -->
+            <view class="form-group">
+              <text class="form-label">餐次</text>
+              <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
+                <view class="picker-item">
+                  {{ mealTypes[dietForm.mealType] }}
+                  <text class="picker-arrow">▼</text>
+                </view>
+              </picker>
+            </view>
+
+            <!-- 食物名称 -->
+            <view class="form-group">
+              <text class="form-label">食物名称</text>
+              <input v-model="dietForm.foodName" class="form-input" placeholder="请输入食物名称" maxlength="50" />
+            </view>
+
+            <!-- 卡路里 -->
+            <view class="form-group">
+              <text class="form-label">卡路里</text>
+              <input v-model="dietForm.calories" class="form-input" type="number" placeholder="留空则智能分析" />
+            </view>
+            <!-- 食物重量 -->
+            <view class="form-group">
+              <text class="form-label">食物重量</text>
+              <input v-model="dietForm.weight" class="form-input" type="number" placeholder="请填写食物重量(g)" />
+            </view>
+
+            <!-- 时间 -->
+            <view class="form-group">
+              <text class="form-label">时间</text>
+              <picker mode="time" :value="dietForm.time" @change="onTimeChange">
+                <view class="picker-item">
+                  {{ dietForm.time || '选择时间' }}
+                  <text class="picker-arrow">▼</text>
+                </view>
+              </picker>
+            </view>
+          </view>
+          <view class="modal-footer">
+            <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
+            <button class="confirm-btn" @tap="saveDietRecord">保存</button>
+          </view>
         </view>
       </view>
-    </uni-card> <!-- 悬浮拍照按钮 -->
-    <view class="float-button" @tap="openCamera">
-      <image src="@/static/icon/camera.png" class="camera-icon"></image>
     </view>
-
-    <!-- 添加饮食记录弹窗 -->
-    <view v-if="showDietModal" class="modal-overlay" @tap="cancelDietRecord">
-      <view class="modal-container" @tap.stop>
-        <view class="modal-header">
-          <text class="modal-title">添加饮食记录</text>
-          <text class="modal-close" @tap="cancelDietRecord">×</text>
-        </view>
-
-        <view class="modal-body"> <!-- 餐次选择 -->
-          <view class="form-group">
-            <text class="form-label">餐次</text>
-            <picker :value="dietForm.mealType" :range="mealTypes" @change="onMealTypeChange">
-              <view class="picker-item">
-                {{ mealTypes[dietForm.mealType] }}
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 食物名称 -->
-          <view class="form-group">
-            <text class="form-label">食物名称</text>
-            <input v-model="dietForm.foodName" class="form-input" placeholder="请输入食物名称" maxlength="50" />
-          </view>
-
-          <!-- 卡路里 -->
-          <view class="form-group">
-            <text class="form-label">卡路里</text>
-            <input v-model="dietForm.calories" class="form-input" type="number" placeholder="留空则智能分析" />
-          </view>
-          <!-- 食物重量 -->
-          <view class="form-group">
-            <text class="form-label">食物重量</text>
-            <input v-model="dietForm.weight" class="form-input" type="number" placeholder="请填写食物重量(g)" />
-          </view>
-
-          <!-- 时间 -->
-          <view class="form-group">
-            <text class="form-label">时间</text>
-            <picker mode="time" :value="dietForm.time" @change="onTimeChange">
-              <view class="picker-item">
-                {{ dietForm.time || '选择时间' }}
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-        </view>
-
-        <view class="modal-footer">
-          <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
-          <button class="confirm-btn" @tap="saveDietRecord">保存</button>
-        </view>
-      </view>
-    </view>
-  </view>
+  </scroll-view>
 </template>
 
 <style scoped>
@@ -451,9 +470,11 @@ onLoad(() => {
 .page-container {
   padding: 15px;
   background-color: #f5f5f5;
-  min-height: 100vh;
+  min-height: calc(100vh - 30px);
 }
-
+.scroll-container {
+  height: 100vh;
+}
 .health-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
