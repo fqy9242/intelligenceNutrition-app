@@ -1,9 +1,10 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-07 -->
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi, addWaterRecordApi, getSportRecordApi } from '@/apis/user'
+import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi,
+   getWaterRecordApi, addWaterRecordApi, getSportRecordApi, addSportRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -102,6 +103,15 @@ const waterForm = ref({
   time: ''
 });
 
+// 运动记录弹窗相关数据
+const showSportModal = ref(false);
+const sportForm = ref({
+  sportName: '',
+  duration: '',
+  consumeCalorie: '',
+  time: ''
+});
+
 // 饮食记录列表
 const dietRecords = ref([]);
 // 今天的饮水记录列表
@@ -118,6 +128,13 @@ const getSportRecord = async () => {
   const res = await getSportRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
   sportRecords.value = res.data
 }
+// 计算今日总饮水量
+const totalWaterIntake = computed(() => {
+  return waterRecords.value.reduce((total, record) => {
+    const capacity = parseInt(record.capacity);
+    return total + (isNaN(capacity) ? 0 : capacity);
+  }, 0);
+});
 
 // 餐次选项
 const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
@@ -289,12 +306,83 @@ const cancelWaterRecord = () => {
   };
 };
 
+// 运动记录时间选择事件
+const onSportTimeChange = (e) => {
+  sportForm.value.time = e.detail.value;
+};
+
+// 保存运动记录
+const saveSportRecord = async () => {
+  if (!sportForm.value.sportName.trim()) {
+    uni.showToast({
+      title: '请输入运动名称',
+      icon: 'none'
+    });
+    return;
+  }
+  if (!sportForm.value.duration) {
+    uni.showToast({
+      title: '请输入运动时长',
+      icon: 'none'
+    });
+    return;
+  }
+  
+  // 构造完整的日期时间字符串 (ISO 8601格式)
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const fullDateTime = `${year}-${month}-${day}T${sportForm.value.time}:00`;
+  
+  // 调用API添加运动记录
+  await addSportRecordApi({
+    studentNumber: uni.getStorageSync('userInfo').studentNumber,
+    sportName: sportForm.value.sportName,
+    duration: sportForm.value.duration,
+    consumeCalorie: sportForm.value.consumeCalorie || null,
+    exerciseTime: fullDateTime
+  });
+  
+  // 重置表单
+  sportForm.value = {
+    sportName: '',
+    duration: '',
+    consumeCalorie: '',
+    time: ''
+  };
+  
+  showSportModal.value = false;
+  
+  uni.showToast({
+    title: '添加成功',
+    icon: 'success'
+  });
+
+  // 重新获取今日运动记录
+  getSportRecord();
+};
+
+// 取消添加运动记录
+const cancelSportRecord = () => {
+  showSportModal.value = false;
+  // 重置表单
+  sportForm.value = {
+    sportName: '',
+    duration: '',
+    consumeCalorie: '',
+    time: ''
+  };
+};
+
 // 添加运动记录
 const addExerciseRecord = () => {
-  uni.showToast({
-    title: '功能开发中',
-    icon: 'none'
-  });
+  // 设置默认时间为当前时间
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  sportForm.value.time = `${hours}:${minutes}`;
+  showSportModal.value = true;
 };
 
 // 打开相机
@@ -432,7 +520,7 @@ const onRefresherrefresh = async () => {
         <view class="card-content">
           <view class="suggestion-item">
             <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
-            <text class="suggestion-text">记得补充水分，今日已饮水800ml</text>
+            <text class="suggestion-text">记得补充水分，今日已饮水{{ totalWaterIntake }}ml</text>
           </view>
           <view class="suggestion-item">
             <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
@@ -499,9 +587,7 @@ const onRefresherrefresh = async () => {
           <button class="confirm-btn" @tap="saveDietRecord">保存</button>
         </view>
       </view>
-    </view>
-
-    <!-- 添加饮水记录弹窗 -->
+    </view>    <!-- 添加饮水记录弹窗 -->
     <view v-if="showWaterModal" class="modal-overlay" @tap="cancelWaterRecord">
       <view class="modal-container" @tap.stop>
         <view class="modal-header">
@@ -531,6 +617,52 @@ const onRefresherrefresh = async () => {
         <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelWaterRecord">取消</button>
           <button class="confirm-btn" @tap="saveWaterRecord">保存</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 添加运动记录弹窗 -->
+    <view v-if="showSportModal" class="modal-overlay" @tap="cancelSportRecord">
+      <view class="modal-container" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">添加运动记录</text>
+          <text class="modal-close" @tap="cancelSportRecord">×</text>
+        </view>
+
+        <view class="modal-body">
+          <!-- 运动名称 -->
+          <view class="form-group">
+            <text class="form-label">运动名称</text>
+            <input v-model="sportForm.sportName" class="form-input" placeholder="请输入运动名称" maxlength="50" />
+          </view>
+
+          <!-- 运动时长 -->
+          <view class="form-group">
+            <text class="form-label">运动时长</text>
+            <input v-model="sportForm.duration" class="form-input" type="number" placeholder="请输入运动时长(分钟)" />
+          </view>
+
+          <!-- 消耗卡路里 -->
+          <view class="form-group">
+            <text class="form-label">消耗卡路里</text>
+            <input v-model="sportForm.consumeCalorie" class="form-input" type="number" placeholder="选填，可留空" />
+          </view>
+
+          <!-- 时间 -->
+          <view class="form-group">
+            <text class="form-label">运动时间</text>
+            <picker mode="time" :value="sportForm.time" @change="onSportTimeChange">
+              <view class="picker-item">
+                {{ sportForm.time || '选择时间' }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+        
+        <view class="modal-footer">
+          <button class="cancel-btn" @tap="cancelSportRecord">取消</button>
+          <button class="confirm-btn" @tap="saveSportRecord">保存</button>
         </view>
       </view>
     </view>

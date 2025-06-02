@@ -62,3 +62,11 @@ export const getSportRecordApi = (studentNumber, onlyToday) => {
       }
     })
 }
+// 添加运动记录
+export const addSportRecordApi = (data) => {
+    return request({
+      url: "/client/sport",
+      method: "post",
+      data
+    });
+}
