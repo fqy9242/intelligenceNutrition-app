@@ -3,7 +3,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi, addWaterRecordApi } from '@/apis/user'
+import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi, getWaterRecordApi, addWaterRecordApi, getSportRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
 const recommendedCalories = ref(1800);
@@ -106,10 +106,17 @@ const waterForm = ref({
 const dietRecords = ref([]);
 // 今天的饮水记录列表
 const waterRecords = ref([]);
+// 今天的运动记录列表
+const sportRecords = ref([]);
 // 获取今天的饮水记录
 const getWaterRecord = async () => {
   const res = await getWaterRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
   waterRecords.value = res.data
+}
+// 获取今天的运动记录
+const getSportRecord = async () => {
+  const res = await getSportRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
+  sportRecords.value = res.data
 }
 
 // 餐次选项
@@ -334,6 +341,7 @@ onLoad(() => {
   getUserBMI()
   getTodayDietRecord() // 加载今日饮食记录
   getWaterRecord() // 加载今日饮水记录
+  getSportRecord() // 加载今日运动记录
 })
 // 下拉刷新状态
 const isTriggered = ref(false);
@@ -346,7 +354,8 @@ const onRefresherrefresh = async () => {
     getNextCheckDay(),
     Promise.resolve(getUserBMI()),
     getTodayDietRecord(),
-    getWaterRecord()
+    getWaterRecord(),
+    getSportRecord()
   ]);
   // 关闭下拉刷新动画
   isTriggered.value = false;
@@ -387,23 +396,23 @@ const onRefresherrefresh = async () => {
             <button class="custom-btn" @tap="addDietRecord">添加饮食记录</button>
           </view>
         </view>
-      </uni-card>
-
-      <!-- 今日运动 -->
+      </uni-card>      <!-- 今日运动 -->
       <uni-card title="今日运动" :padding="false" class="custom-card">
         <view class="card-content">
-          <view class="dish-item">
+          <view v-for="(record, index) in sportRecords" :key="index" class="dish-item">
             <view class="dish-info">
-              <view class="dish-title">晨跑</view>
-              <view class="dish-desc">3公里 | 消耗200kcal</view>
-              <view class="dish-desc">07:00</view>
+              <view class="dish-title">{{ record.sportName }}</view>
+              <view class="dish-desc">
+                {{ record.duration }}分钟 | 消耗{{ record.consumeCalorie }}kcal
+              </view>
+              <view class="dish-desc">{{ formatTimeOnly(record.exerciseTime) }}</view>
             </view>
           </view>
           <view class="btn-container">
             <button class="custom-btn" @tap="addExerciseRecord">添加运动记录</button>
           </view>
         </view>
-      </uni-card>      <!-- 今日饮水 -->
+      </uni-card><!-- 今日饮水 -->
       <uni-card title="今日饮水" :padding="false" class="custom-card">
         <view class="card-content">          <view v-for="(record, index) in waterRecords" :key="index" class="dish-item">
             <view class="dish-info">

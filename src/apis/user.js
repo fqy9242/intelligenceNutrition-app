@@ -53,3 +53,12 @@ export const addWaterRecordApi = (data) => {
       data
     })
 }
+// 获取运动记录
+export const getSportRecordApi = (studentNumber, onlyToday) => {
+    return request({
+      url: `/client/sport/${studentNumber}`,
+      data: {
+        onlyToday
+      }
+    })
+}
