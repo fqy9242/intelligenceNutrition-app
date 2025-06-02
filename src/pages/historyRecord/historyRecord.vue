@@ -4,7 +4,7 @@
 import { ref } from 'vue';
 import { getHealthHistoryApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app'
-import { getTodayDietRecordApi } from '@/apis/user'
+import { getDietRecordApi } from '@/apis/user'
 
 // 饮食记录数据
 const dietRecords = ref([])
@@ -17,84 +17,117 @@ const getMealTypeName = (mealType) => {
   return mealTypes[mealType] || mealTypes[0];
 };
 
-// 获取今日饮食记录
-const getTodayDietRecord = async () => {
-
-    const res = await getTodayDietRecordApi(uni.getStorageSync('userInfo').studentNumber);
+// 获取饮食记录
+const getDietRecord = async () => {
+  try {
+    const res = await getDietRecordApi(uni.getStorageSync('userInfo').studentNumber, 0);
     const records = [];
     const data = res.data;
 
-    // 处理早餐数据
-    if (data.breakfast) {
-      records.push({
-        id: Date.now() + 1,
-        mealType: 0, // 早餐
-        foodName: data.breakfast.foodList.join(' + '),
-        weight: data.breakfast.totalWeight,
-        calories: data.breakfast.totalCalories,
-        time: new Date(data.breakfast.mealTime).toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        date: new Date(data.breakfast.mealTime).toLocaleDateString('zh-CN')
+    // 检查数据是否为数组
+    if (Array.isArray(data)) {
+      // 处理新格式的数据：数组形式的食物记录
+      data.forEach(item => {
+        const record = {
+          id: item.id,
+          mealType: item.mealType,
+          foodName: item.foodName,
+          weight: item.foodWeight,
+          calories: item.foodCalorie,
+          protein: item.foodProtein,
+          dietaryFiber: item.foodDietaryFiber,
+          fat: item.foodFat,
+          carbohydrate: item.foodCarbohydrate,
+          time: new Date(item.createTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(item.createTime).toLocaleDateString('zh-CN')
+        };
+        records.push(record);
       });
-    }
 
-    // 处理午餐数据
-    if (data.lunch) {
-      records.push({
-        id: Date.now() + 2,
-        mealType: 1, // 午餐
-        foodName: data.lunch.foodList.join(' + '),
-        weight: data.lunch.totalWeight,
-        calories: data.lunch.totalCalories,
-        time: new Date(data.lunch.mealTime).toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        date: new Date(data.lunch.mealTime).toLocaleDateString('zh-CN')
-      });
-    }
+      // 按时间排序（最新的在前面）
+      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+    } else {
+      // 兼容旧格式数据（如果后端还可能返回旧格式）
+      // 处理早餐数据
+      if (data.breakfast) {
+        records.push({
+          id: Date.now() + 1,
+          mealType: 0, // 早餐
+          foodName: data.breakfast.foodList.join(' + '),
+          weight: data.breakfast.totalWeight,
+          calories: data.breakfast.totalCalories,
+          time: new Date(data.breakfast.mealTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(data.breakfast.mealTime).toLocaleDateString('zh-CN')
+        });
+      }
 
-    // 处理晚餐数据
-    if (data.dinner) {
-      records.push({
-        id: Date.now() + 3,
-        mealType: 2, // 晚餐
-        foodName: data.dinner.foodList.join(' + '),
-        weight: data.dinner.totalWeight,
-        calories: data.dinner.totalCalories,
-        time: new Date(data.dinner.mealTime).toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        date: new Date(data.dinner.mealTime).toLocaleDateString('zh-CN')
-      });
-    }
+      // 处理午餐数据
+      if (data.lunch) {
+        records.push({
+          id: Date.now() + 2,
+          mealType: 1, // 午餐
+          foodName: data.lunch.foodList.join(' + '),
+          weight: data.lunch.totalWeight,
+          calories: data.lunch.totalCalories,
+          time: new Date(data.lunch.mealTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(data.lunch.mealTime).toLocaleDateString('zh-CN')
+        });
+      }
 
-    // 处理加餐数据
-    if (data.other) {
-      records.push({
-        id: Date.now() + 4,
-        mealType: 3, // 加餐
-        foodName: data.other.foodList.join(' + '),
-        weight: data.other.totalWeight,
-        calories: data.other.totalCalories,
-        time: new Date(data.other.mealTime).toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        date: new Date(data.other.mealTime).toLocaleDateString('zh-CN')
-      });
+      // 处理晚餐数据
+      if (data.dinner) {
+        records.push({
+          id: Date.now() + 3,
+          mealType: 2, // 晚餐
+          foodName: data.dinner.foodList.join(' + '),
+          weight: data.dinner.totalWeight,
+          calories: data.dinner.totalCalories,
+          time: new Date(data.dinner.mealTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(data.dinner.mealTime).toLocaleDateString('zh-CN')
+        });
+      }
+
+      // 处理加餐数据
+      if (data.other) {
+        records.push({
+          id: Date.now() + 4,
+          mealType: 3, // 加餐
+          foodName: data.other.foodList.join(' + '),
+          weight: data.other.totalWeight,
+          calories: data.other.totalCalories,
+          time: new Date(data.other.mealTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(data.other.mealTime).toLocaleDateString('zh-CN')
+        });
+      }
     }
 
     // 更新饮食记录列表
     dietRecords.value = records;
-    // console.log('处理后的饮食记录:', dietRecords.value);
+    console.log('处理后的饮食记录:', dietRecords.value);
+  } catch (error) {
+    console.error('获取饮食记录失败:', error);
+    dietRecords.value = [];
+  }
 };
 
 // 运动记录数据
@@ -183,7 +216,7 @@ const getHealthHistory = async () => {
 };
 onLoad(() => {
   getHealthHistory()
-  getTodayDietRecord()
+  getDietRecord()
 })
 </script>
 
@@ -195,18 +228,29 @@ onLoad(() => {
         <view v-if="dietRecords.length === 0" class="empty-message">
           <text>暂无饮食记录</text>
         </view>
-        <view v-for="record in dietRecords" :key="record.id" class="record-item">
-          <view class="dish-info">
-            <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
-            <view class="dish-desc">{{ record.foodName }}</view>
-            <view class="dish-desc">
-              {{ record.time }}
-              <template v-if="record.weight">| {{ record.weight }}g</template>
-              <template v-if="record.calories">| {{ record.calories }}kcal</template>
+        <scroll-view v-else scroll-y="true" class="diet-scroll-view">
+          <view v-for="record in dietRecords" :key="record.id" class="record-item">
+            <view class="dish-info">
+              <view class="dish-title">{{ getMealTypeName(record.mealType) }}</view>
+              <view class="dish-desc">{{ record.foodName }}</view>
+              <view class="dish-desc">
+                {{ record.time }}
+                <template v-if="record.weight"> | {{ record.weight }}g</template>
+                <template v-if="record.calories"> | {{ record.calories }}kcal</template>
+              </view>
+              <view v-if="record.protein || record.fat || record.carbohydrate || record.dietaryFiber" class="dish-desc">
+                <template v-if="record.protein">蛋白质：{{ record.protein }}g</template>
+                <template v-if="record.protein && record.fat"> | </template>
+                <template v-if="record.fat">脂肪：{{ record.fat }}g</template>
+                <template v-if="(record.protein || record.fat) && record.carbohydrate"> | </template>
+                <template v-if="record.carbohydrate">碳水：{{ record.carbohydrate }}g</template>
+                <template v-if="(record.protein || record.fat || record.carbohydrate) && record.dietaryFiber"> | </template>
+                <template v-if="record.dietaryFiber">膳食纤维：{{ record.dietaryFiber }}g</template>
+              </view>
+              <view class="dish-desc date-info">{{ record.date }}</view>
             </view>
-            <view class="dish-desc date-info">{{ record.date }}</view>
           </view>
-        </view>
+        </scroll-view>
       </view>
     </uni-card>
 
@@ -266,6 +310,11 @@ onLoad(() => {
   margin-bottom: 15px;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.diet-scroll-view {
+  max-height: 400px;
+  height: auto;
 }
 
 .card-content {

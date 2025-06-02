@@ -3,7 +3,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
-import { getNextCheckPlanApi, addDietRecordApi, getTodayDietRecordApi,
+import { getNextCheckPlanApi, addDietRecordApi, getDietRecordApi,
    getWaterRecordApi, addWaterRecordApi, getSportRecordApi, addSportRecordApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
@@ -26,10 +26,10 @@ const getUserBMI = () => {
 }
 
 
-// 获取学生今日饮食记录
-const getTodayDietRecord = async () => {
+// 获取学生饮食记录
+const getDietRecord = async () => {
   // 调用后端接口
-  const res = await getTodayDietRecordApi(uni.getStorageSync('userInfo').studentNumber);
+  const res = await getDietRecordApi(uni.getStorageSync('userInfo').studentNumber, 1);
   const records = [];
   const data = res.data;
   // 处理早餐数据
@@ -459,7 +459,7 @@ const openCamera = () => {
 onLoad(() => {
   getNextCheckDay()
   getUserBMI()
-  getTodayDietRecord() // 加载今日饮食记录
+  getDietRecord() // 加载今日饮食记录
   getWaterRecord() // 加载今日饮水记录
   getSportRecord() // 加载今日运动记录
 })
@@ -473,7 +473,7 @@ const onRefresherrefresh = async () => {
   await Promise.all([
     getNextCheckDay(),
     Promise.resolve(getUserBMI()),
-    getTodayDietRecord(),
+    getDietRecord(),
     getWaterRecord(),
     getSportRecord()
   ]);

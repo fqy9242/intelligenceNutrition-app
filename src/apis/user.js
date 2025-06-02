@@ -29,10 +29,13 @@ export const addDietRecordApi = (data) => {
       data
     });
 }
-// 学生查询今日饮食记录
-export const getTodayDietRecordApi = (studentNumber) => {
+// 学生查询饮食记录
+export const getDietRecordApi = (studentNumber, onlyToday) => {
     return request({
       url: `/client/user/dietaryRecord/${studentNumber}`,
+      data: {
+        onlyToday
+      }
     })
 }
 // 获取饮水记录
