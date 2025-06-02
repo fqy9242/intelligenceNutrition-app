@@ -112,6 +112,19 @@ const sportForm = ref({
   time: ''
 });
 
+// 是否显示自定义运动名称输入框
+const showCustomSportName = ref(false);
+
+// 运动类型选项
+const sportTypes = [
+  '跑步', '快走', '慢跑', '游泳', '骑自行车', 
+  '健身房训练', '瑜伽', '普拉提', '跳舞', '篮球',
+  '足球', '羽毛球', '乒乓球', '网球', '爬山',
+  '登山', '徒步', '跳绳', '仰卧起坐', '俯卧撑',
+  '举重', '拳击', '武术', '太极', '广场舞',
+  '健美操', '椭圆机', '跑步机', '动感单车', '其他'
+];
+
 // 饮食记录列表
 const dietRecords = ref([]);
 // 今天的饮水记录列表
@@ -311,11 +324,25 @@ const onSportTimeChange = (e) => {
   sportForm.value.time = e.detail.value;
 };
 
+// 运动名称选择事件
+const onSportNameChange = (e) => {
+  const selectedIndex = e.detail.value;
+  const selectedSport = sportTypes[selectedIndex];
+  
+  if (selectedSport === '其他') {
+    showCustomSportName.value = true;
+    sportForm.value.sportName = ''; // 清空运动名称，让用户自己输入
+  } else {
+    showCustomSportName.value = false;
+    sportForm.value.sportName = selectedSport;
+  }
+};
+
 // 保存运动记录
 const saveSportRecord = async () => {
   if (!sportForm.value.sportName.trim()) {
     uni.showToast({
-      title: '请输入运动名称',
+      title: '请选择运动类型',
       icon: 'none'
     });
     return;
@@ -343,8 +370,7 @@ const saveSportRecord = async () => {
     consumeCalorie: sportForm.value.consumeCalorie || null,
     exerciseTime: fullDateTime
   });
-  
-  // 重置表单
+    // 重置表单
   sportForm.value = {
     sportName: '',
     duration: '',
@@ -352,6 +378,7 @@ const saveSportRecord = async () => {
     time: ''
   };
   
+  showCustomSportName.value = false; // 重置自定义输入状态
   showSportModal.value = false;
   
   uni.showToast({
@@ -366,6 +393,7 @@ const saveSportRecord = async () => {
 // 取消添加运动记录
 const cancelSportRecord = () => {
   showSportModal.value = false;
+  showCustomSportName.value = false; // 重置自定义输入状态
   // 重置表单
   sportForm.value = {
     sportName: '',
@@ -382,6 +410,10 @@ const addExerciseRecord = () => {
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   sportForm.value.time = `${hours}:${minutes}`;
+  
+  // 重置自定义输入状态
+  showCustomSportName.value = false;
+  
   showSportModal.value = true;
 };
 
@@ -629,11 +661,21 @@ const onRefresherrefresh = async () => {
           <text class="modal-close" @tap="cancelSportRecord">×</text>
         </view>
 
-        <view class="modal-body">
-          <!-- 运动名称 -->
+        <view class="modal-body">          <!-- 运动名称 -->
           <view class="form-group">
             <text class="form-label">运动名称</text>
-            <input v-model="sportForm.sportName" class="form-input" placeholder="请输入运动名称" maxlength="50" />
+            <picker mode="selector" :range="sportTypes" @change="onSportNameChange">
+              <view class="picker-item">
+                {{ showCustomSportName ? '其他' : (sportForm.sportName || '选择运动类型') }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+
+          <!-- 自定义运动名称输入框 -->
+          <view v-if="showCustomSportName" class="form-group">
+            <text class="form-label">请输入运动名称</text>
+            <input v-model="sportForm.sportName" class="form-input" placeholder="请输入具体的运动名称" maxlength="20" />
           </view>
 
           <!-- 运动时长 -->
