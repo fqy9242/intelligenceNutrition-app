@@ -4,7 +4,7 @@
 import { ref } from 'vue';
 import { getHealthHistoryApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app'
-import { getDietRecordApi } from '@/apis/user'
+import { getDietRecordApi, getSportRecordApi } from '@/apis/user'
 
 // 饮食记录数据
 const dietRecords = ref([])
@@ -131,32 +131,47 @@ const getDietRecord = async () => {
 };
 
 // 运动记录数据
-const exerciseRecords = ref([
-  {
-    id: 1,
-    type: '晨跑',
-    distance: '3公里',
-    calories: '200kcal',
-    date: '2025/05/29',
-    time: '07:00'
-  },
-  {
-    id: 2,
-    type: '游泳',
-    duration: '1小时',
-    calories: '300kcal',
-    date: '2025/05/28',
-    time: '18:30'
-  },
-  {
-    id: 3,
-    type: '健身房',
-    duration: '1.5小时',
-    calories: '400kcal',
-    date: '2025/05/27',
-    time: '19:00'
+const exerciseRecords = ref([]);
+
+// 获取运动记录
+const getSportRecord = async () => {
+  try {
+    const res = await getSportRecordApi(uni.getStorageSync('userInfo').studentNumber, 0);
+    const records = [];
+    const data = res.data;
+
+    // 检查数据是否为数组
+    if (Array.isArray(data)) {
+      // 处理运动记录数据
+      data.forEach(item => {
+        const record = {
+          id: item.id,
+          type: item.sportName,
+          duration: item.duration,
+          calories: item.consumeCalorie,
+          exerciseTime: item.exerciseTime,
+          time: new Date(item.createTime).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          date: new Date(item.createTime).toLocaleDateString('zh-CN')
+        };
+        records.push(record);
+      });
+
+      // 按时间排序（最新的在前面）
+      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+    }
+
+    // 更新运动记录列表
+    exerciseRecords.value = records;
+    console.log('处理后的运动记录:', exerciseRecords.value);
+  } catch (error) {
+    console.error('获取运动记录失败:', error);
+    exerciseRecords.value = [];
   }
-]);
+};
 
 // 健康数据记录
 const healthDataRecords = ref([]);
@@ -217,6 +232,7 @@ const getHealthHistory = async () => {
 onLoad(() => {
   getHealthHistory()
   getDietRecord()
+  getSportRecord()
 })
 </script>
 
@@ -260,13 +276,19 @@ onLoad(() => {
         <view v-if="exerciseRecords.length === 0" class="empty-message">
           <text>暂无运动记录</text>
         </view>
-        <view v-for="(record, index) in exerciseRecords" :key="index" class="record-item">
-          <view class="dish-info">
-            <view class="dish-title">{{ record.type }}</view>
-            <view class="dish-desc">{{ record.distance || record.duration }} | 消耗 {{ record.calories }}</view>
-            <view class="dish-desc date-info">{{ record.date }}</view>
+        <scroll-view v-else scroll-y="true" class="sport-scroll-view">
+          <view v-for="(record, index) in exerciseRecords" :key="record.id || index" class="record-item">
+            <view class="dish-info">
+              <view class="dish-title">{{ record.type }}</view>
+              <view class="dish-desc">
+                {{ record.time }}
+                <template v-if="record.duration"> | 时长：{{ record.duration }}分钟</template>
+                <template v-if="record.calories"> | 消耗：{{ record.calories }}kcal</template>
+              </view>
+              <view class="dish-desc date-info">{{ record.date }}</view>
+            </view>
           </view>
-        </view>
+        </scroll-view>
       </view>
     </uni-card>
 
@@ -314,6 +336,11 @@ onLoad(() => {
 
 .diet-scroll-view {
   max-height: 400px;
+  height: auto;
+}
+
+.sport-scroll-view {
+  max-height: 300px;
   height: auto;
 }
 
