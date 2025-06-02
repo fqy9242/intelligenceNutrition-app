@@ -2,23 +2,20 @@
 <!-- Date: 2025-05-07 -->
 <script setup>
 import { onLoad } from '@dcloudio/uni-app';
-import { computed, ref } from 'vue';
-
-// const userInfo = ref({
-//   name: '张同学',
-//   studentNumber: "2024001",
-//   height: 175,
-//   avatar: "https://ts3.tc.mm.bing.net/th/id/OIP-C.g5M-iZUiocFCi9YAzojtRAAAAA?cb=iwp1&rs=1&pid=ImgDetMain",
-//   weight: 65,
-//   BMI: 21.5,
-//   irritability: null // 是否过敏
-// });
+import { computed, onMounted, ref } from 'vue';
+import { getStudentSportCountApi } from '@/apis/user';
 const userInfo = ref(null)
 // 健康记录信息
 const healthRecord = ref({
-  currentWeekSport: 5,
+  currentWeekSport: 0,
   healthCheckIn: 28
 });
+
+// 获取本周运动次数
+const getStudentSportCount = async () => {
+  const res = await getStudentSportCountApi(uni.getStorageSync('userInfo').studentNumber);
+  healthRecord.value.currentWeekSport = res.data || 0;
+};
 
 // 处理头像点击
 const avatarOnHandle = () => {
@@ -56,7 +53,7 @@ const privacySettings = () => {
 // 关于我们
 const aboutUs = () => {
   uni.showToast({
-    title: '智能营养助手 v1.0.0',
+    title: 'by 覃惠通 github.com/fqy9242',
     icon: 'none',
     duration: 2000
   });
@@ -89,6 +86,11 @@ const logout = () => {
     }
   });
 };
+
+onMounted(() => {
+  // 获取本周运动次数
+  getStudentSportCount()
+});
 
 const getAllergen = computed(() => {
    if (!userInfo.value || !userInfo.value.allergen) {

@@ -4,10 +4,11 @@
 import { computed, ref } from 'vue';
 import { RecognizeFoodApi } from '@/apis/ai';
 import { getNextCheckPlanApi, addDietRecordApi, getDietRecordApi,
-   getWaterRecordApi, addWaterRecordApi, getSportRecordApi, addSportRecordApi } from '@/apis/user'
+   getWaterRecordApi, addWaterRecordApi, getSportRecordApi, addSportRecordApi,
+   getTodayRecommendIntakeApi } from '@/apis/user'
 import { onLoad } from '@dcloudio/uni-app';
 // 用户健康数据
-const recommendedCalories = ref(1800);
+const recommendedCalories = ref('--');
 // 获取下次体检时间
 const nextCheckDay = ref('');
 const getNextCheckDay = async () => {
@@ -25,6 +26,11 @@ const getUserBMI = () => {
   }
 }
 
+// 获取今日推荐摄入量
+const getTodayRecommendIntake = async () => {
+  const res = await getTodayRecommendIntakeApi(uni.getStorageSync('userInfo').studentNumber);
+  recommendedCalories.value = res.data || '--';
+}
 
 // 获取学生饮食记录
 const getDietRecord = async () => {
@@ -462,6 +468,7 @@ onLoad(() => {
   getDietRecord() // 加载今日饮食记录
   getWaterRecord() // 加载今日饮水记录
   getSportRecord() // 加载今日运动记录
+  getTodayRecommendIntake()
 })
 // 下拉刷新状态
 const isTriggered = ref(false);
@@ -475,7 +482,8 @@ const onRefresherrefresh = async () => {
     Promise.resolve(getUserBMI()),
     getDietRecord(),
     getWaterRecord(),
-    getSportRecord()
+    getSportRecord(),
+    getTodayRecommendIntake(),
   ]);
   // 关闭下拉刷新动画
   isTriggered.value = false;

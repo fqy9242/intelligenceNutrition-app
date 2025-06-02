@@ -73,3 +73,15 @@ export const addSportRecordApi = (data) => {
       data
     });
 }
+// 获取今日推荐摄入量
+export const getTodayRecommendIntakeApi = (studentNumber) => {
+  return request({
+    url: `/client/user/todayRecommendCalories/${studentNumber}`,
+  })
+}
+// 获取学生本周运动次数
+export const getStudentSportCountApi = (studentNumber) => {
+  return request({
+    url: `/client/sport/totalThisWeekSport/${studentNumber}`,
+  });
+}
