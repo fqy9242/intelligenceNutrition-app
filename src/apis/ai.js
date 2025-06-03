@@ -31,3 +31,9 @@ export const RecognizeFoodApi = (tempFilePath) => {
     });
   });
 };
+// 获取健康建议
+export const getHealthAdviceApi = (studentNumber) => {
+  return request({
+    url: `/client/user/healthAdvise/${studentNumber}`,
+  });
+}

@@ -1,7 +1,8 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-14 -->
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue'
+import { getHealthAdviceApi } from '@/apis/ai'
 
 // 健康评分数据
 const healthScore = ref(85);
@@ -16,11 +17,15 @@ const nutritionAnalysis = ref([
 ]);
 
 // 健康建议
-const healthSuggestions = ref([
-  '增加蔬菜摄入量',
-  '控制油炸食品摄入',
-  '保持适量运动',
-]);
+const healthSuggestions = ref([]);
+// 获取健康建议
+const getHealthSuggestions = async (studentNumber) => {
+  const response = await getHealthAdviceApi(studentNumber);
+  healthSuggestions.value = response.data || [];
+}
+onMounted(() => {
+  getHealthSuggestions(uni.getStorageSync('userInfo').studentNumber)
+})
 </script>
 
 <template>
