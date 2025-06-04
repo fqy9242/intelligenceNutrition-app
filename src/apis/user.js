@@ -85,3 +85,9 @@ export const getStudentSportCountApi = (studentNumber) => {
     url: `/client/sport/totalThisWeekSport/${studentNumber}`,
   });
 }
+// 获取健康评分
+export const getHealthScoreApi = (studentNumber) => {
+  return request({
+    url: `/client/user/getHealthScore/${studentNumber}`
+  })
+}

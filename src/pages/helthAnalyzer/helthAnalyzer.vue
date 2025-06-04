@@ -2,11 +2,12 @@
 <!-- Date: 2025-05-14 -->
 <script setup>
 import { onMounted, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { getHealthAdviceApi } from '@/apis/ai'
-
+import { getHealthScoreApi } from '@/apis/user'
 // 健康评分数据
-const healthScore = ref(85);
-const scoreImprovement = ref(5);
+const healthScore = ref(0);
+const scoreImprovement = ref(0);
 
 // 营养摄入分析数据
 const nutritionAnalysis = ref([
@@ -20,11 +21,25 @@ const nutritionAnalysis = ref([
 const healthSuggestions = ref([]);
 // 获取健康建议
 const getHealthSuggestions = async (studentNumber) => {
-  const response = await getHealthAdviceApi(studentNumber);
-  healthSuggestions.value = response.data || [];
+    const response = await getHealthAdviceApi(studentNumber);
+    healthSuggestions.value = response.data || [];
 }
-onMounted(() => {
-  getHealthSuggestions(uni.getStorageSync('userInfo').studentNumber)
+// 获取健康评分
+const getHealthScore = async (studentNumber) => {
+    const response = await getHealthScoreApi(studentNumber);
+    healthScore.value = response.data.nowScore || 0;
+    const lastScore = response.data.lastScore || 0;
+    scoreImprovement.value = healthScore.value - lastScore;
+}
+
+onLoad(() => {
+  const studentNumber = uni.getStorageSync('userInfo')?.studentNumber;
+  if (studentNumber) {
+    getHealthSuggestions(studentNumber);
+    getHealthScore(studentNumber);
+  } else {
+    console.error('未找到学号信息');
+  }
 })
 </script>
 
@@ -67,8 +82,8 @@ onMounted(() => {
     <uni-card title="健康评分" :padding="false" class="custom-card">
       <view class="card-content">
         <view class="score-container">
-          <text class="health-score">{{ healthScore }}</text>
-          <text class="score-change">较上周提升{{ scoreImprovement }}分</text>
+          <text class="health-score" :style="{color: healthScore >= 60? '#4CAF50' : '#FF5733'}">{{ healthScore }}</text>
+          <text class="score-change">较上次{{ scoreImprovement >= 0 ? '提升' : '下降' }}{{ Math.abs(scoreImprovement) }}分</text>
         </view>
       </view>
     </uni-card>
@@ -152,7 +167,7 @@ onMounted(() => {
 
 .health-score {
   font-size: 48px;
-  color: #4CAF50;
+  /* color: #4CAF50; */
   font-weight: bold;
 }
 

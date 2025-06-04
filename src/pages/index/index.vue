@@ -25,11 +25,13 @@ const getUserBMI = () => {
     BMI.value = userInfo.bmi;
   }
 }
-
+// 摄入量是否达标
+const calorieIsStandard = ref(true)
 // 获取今日推荐摄入量
 const getTodayRecommendIntake = async () => {
-  const res = await getTodayRecommendIntakeApi(uni.getStorageSync('userInfo').studentNumber);
-  recommendedCalories.value = res.data || '--';
+  const res = await getTodayRecommendIntakeApi(uni.getStorageSync('userInfo').studentNumber)
+  recommendedCalories.value = res.data.recommendValue || '--'
+  calorieIsStandard.value = res.data.recommendValue < res.data.todayCalorie
 }
 
 // 获取学生饮食记录
@@ -503,7 +505,8 @@ const onRefresherrefresh = async () => {
           <view class="stat-label">BMI指数</view>
         </view>
         <view class="stat-card">
-          <view class="stat-value">{{ recommendedCalories }}</view>
+          <view class="stat-value" :style="{ color: calorieIsStandard ? 'red' : '#4CAF50' }">{{ recommendedCalories }}
+          </view>
           <view class="stat-label">今日推荐摄入(kcal)</view>
         </view>
       </view> <!-- 今日健康打卡 -->
@@ -524,7 +527,7 @@ const onRefresherrefresh = async () => {
             <button class="custom-btn" @tap="addDietRecord">添加饮食记录</button>
           </view>
         </view>
-      </uni-card>      <!-- 今日运动 -->
+      </uni-card> <!-- 今日运动 -->
       <uni-card title="今日运动" :padding="false" class="custom-card">
         <view class="card-content">
           <view v-for="(record, index) in sportRecords" :key="index" class="dish-item">
@@ -542,7 +545,8 @@ const onRefresherrefresh = async () => {
         </view>
       </uni-card><!-- 今日饮水 -->
       <uni-card title="今日饮水" :padding="false" class="custom-card">
-        <view class="card-content">          <view v-for="(record, index) in waterRecords" :key="index" class="dish-item">
+        <view class="card-content">
+          <view v-for="(record, index) in waterRecords" :key="index" class="dish-item">
             <view class="dish-info">
               <view class="dish-title">饮水</view>
               <view class="dish-desc">{{ record.capacity }}</view>
@@ -622,12 +626,13 @@ const onRefresherrefresh = async () => {
               </view>
             </picker>
           </view>
-        </view>        <view class="modal-footer">
+        </view>
+        <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelDietRecord">取消</button>
           <button class="confirm-btn" @tap="saveDietRecord">保存</button>
         </view>
       </view>
-    </view>    <!-- 添加饮水记录弹窗 -->
+    </view> <!-- 添加饮水记录弹窗 -->
     <view v-if="showWaterModal" class="modal-overlay" @tap="cancelWaterRecord">
       <view class="modal-container" @tap.stop>
         <view class="modal-header">
@@ -653,7 +658,7 @@ const onRefresherrefresh = async () => {
             </picker>
           </view>
         </view>
-        
+
         <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelWaterRecord">取消</button>
           <button class="confirm-btn" @tap="saveWaterRecord">保存</button>
@@ -669,7 +674,7 @@ const onRefresherrefresh = async () => {
           <text class="modal-close" @tap="cancelSportRecord">×</text>
         </view>
 
-        <view class="modal-body">          <!-- 运动名称 -->
+        <view class="modal-body"> <!-- 运动名称 -->
           <view class="form-group">
             <text class="form-label">运动名称</text>
             <picker mode="selector" :range="sportTypes" @change="onSportNameChange">
@@ -709,7 +714,7 @@ const onRefresherrefresh = async () => {
             </picker>
           </view>
         </view>
-        
+
         <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelSportRecord">取消</button>
           <button class="confirm-btn" @tap="saveSportRecord">保存</button>
@@ -753,7 +758,7 @@ const onRefresherrefresh = async () => {
 .stat-value {
   font-size: 24px;
   font-weight: bold;
-  color: #4CAF50;
+  /* color: #4CAF50; */
   margin-bottom: 5px;
 }
 
