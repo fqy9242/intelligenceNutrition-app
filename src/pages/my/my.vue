@@ -3,13 +3,19 @@
 <script setup>
 import { onLoad } from '@dcloudio/uni-app';
 import { computed, onMounted, ref } from 'vue';
-import { getStudentSportCountApi } from '@/apis/user';
+import { getStudentSportCountApi, getHealthCheckInDaysApi } from '@/apis/user';
 const userInfo = ref(null)
 // 健康记录信息
 const healthRecord = ref({
   currentWeekSport: 0,
-  healthCheckIn: 28
+  healthCheckIn: 0
 });
+
+// 获取健康打卡天数
+const getHealthCheckInDays = async () => {
+  const res = await getHealthCheckInDaysApi(uni.getStorageSync('userInfo').studentNumber);
+  healthRecord.value.healthCheckIn = res.data || 0;
+}
 
 // 获取本周运动次数
 const getStudentSportCount = async () => {
@@ -99,6 +105,7 @@ const getAllergen = computed(() => {
   return '[ ' + userInfo.value.allergen.join(', ') + ' ]';
 });
 onLoad(() => {
+  getHealthCheckInDays(uni.getStorageSync('userInfo').studentNumber);
   userInfo.value = uni.getStorageSync('userInfo')
   if (!userInfo.value) {
     uni.showToast({

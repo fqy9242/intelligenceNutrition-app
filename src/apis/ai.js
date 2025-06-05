@@ -37,3 +37,9 @@ export const getHealthAdviceApi = (studentNumber) => {
     url: `/client/user/healthAdvise/${studentNumber}`,
   });
 }
+// 摄入营养分析
+export const getNutrientAnalysisApi = (studentNumber) => {
+  return request({
+    url: `/client/user/nutritionAnalysis/${studentNumber}`,
+  });
+}

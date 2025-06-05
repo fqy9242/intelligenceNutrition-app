@@ -91,3 +91,10 @@ export const getHealthScoreApi = (studentNumber) => {
     url: `/client/user/getHealthScore/${studentNumber}`
   })
 }
+
+// 获取健康打卡天数
+export const getHealthCheckInDaysApi = (studentNumber) => {
+  return request({
+    url: `/client/user/heathCheckInDays/${studentNumber}`,
+  });
+}
