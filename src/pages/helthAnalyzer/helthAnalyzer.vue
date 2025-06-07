@@ -3,7 +3,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getHealthAdviceApi, getNutrientAnalysisApi } from '@/apis/ai'
+import { getHealthAdviceApi, getNutrientAnalysisApi, getWeeklyNutritionTrendApi } from '@/apis/ai'
 import { getHealthScoreApi } from '@/apis/user'
 // 健康评分数据
 const healthScore = ref(0);
@@ -11,6 +11,30 @@ const scoreImprovement = ref(0);
 
 // 营养摄入分析数据
 const nutritionAnalysis = ref([]);
+
+// 本周营养趋势数据
+const weeklyNutritionTrend = ref([]);
+
+// 营养素类型配置
+const nutritionTypes = ref([
+  { key: 'protein', name: '蛋白质', color: '#4CAF50', unit: 'g' },
+  { key: 'carbs', name: '碳水化合物', color: '#2196F3', unit: 'g' },
+  { key: 'fat', name: '脂肪', color: '#FF9800', unit: 'g' },
+  { key: 'vitamins', name: '维生素', color: '#9C27B0', unit: 'mg' }
+]);
+
+// 获取营养素的百分比高度
+const getPercentageHeight = (value) => {
+  return Math.min(value, 100) + '%';
+};
+
+// 获取营养素状态
+const getNutrientStatus = (value) => {
+  if (value >= 90) return { text: '优秀', color: '#4CAF50' };
+  if (value >= 80) return { text: '良好', color: '#2196F3' };
+  if (value >= 70) return { text: '一般', color: '#FF9800' };
+  return { text: '不足', color: '#F44336' };
+};
 
 // 营养素状态颜色映射
 const getStatusColor = (status) => {
@@ -36,26 +60,14 @@ const getNutrientName = (key) => {
 
 // 获取营养分析数据
 const getNutrientAnalysis = async (studentNumber) => {
-  try {
     const response = await getNutrientAnalysisApi(studentNumber);
     const data = response.data || {};
-    
     // 将后端数据转换为前端需要的格式
     nutritionAnalysis.value = Object.keys(data).map(key => ({
       name: getNutrientName(key),
       status: data[key],
       color: getStatusColor(data[key])
     }));
-  } catch (error) {
-    console.error('获取营养分析数据失败:', error);
-    // 保持默认数据作为备选
-    nutritionAnalysis.value = [
-      { name: '蛋白质', status: '达标', color: '#4CAF50' },
-      { name: '脂肪', status: '偏高', color: '#FF5733' },
-      { name: '碳水化合物', status: '适中', color: '#2196F3' },
-      { name: '维生素', status: '不足', color: '#FF9800' },
-    ];
-  }
 };
 
 // 健康建议
@@ -73,27 +85,73 @@ const getHealthScore = async (studentNumber) => {
     scoreImprovement.value = healthScore.value - lastScore;
 }
 
+// 获取本周营养趋势数据
+const getWeeklyNutritionTrend = async (studentNumber) => {
+    const response = await getWeeklyNutritionTrendApi(studentNumber);
+    weeklyNutritionTrend.value = response.data || [];
+}
+
 onLoad(() => {
   const studentNumber = uni.getStorageSync('userInfo')?.studentNumber;
-  if (studentNumber) {
     getHealthSuggestions(studentNumber);
     getHealthScore(studentNumber);
     getNutrientAnalysis(studentNumber);
-  } else {
-    console.error('未找到学号信息');
-  }
+    getWeeklyNutritionTrend(studentNumber);
 })
 </script>
 
-<template>
-  <view class="page-container">
-    <!-- 本周营养趋势 -->
+<template>  <view class="page-container">    <!-- 本周营养趋势 -->
     <uni-card title="本周营养趋势" :padding="false" class="custom-card">
       <view class="card-content">
-        <view class="nutrition-chart">
-          <view class="chart-placeholder">
-            <text>蛋白质摄入趋势</text>
-            <view class="chart-area"></view>
+        <!-- 营养素概览卡片 -->
+        <view class="nutrition-overview">
+          <view v-for="type in nutritionTypes" :key="type.key" class="nutrition-card">
+            <view class="nutrition-header">
+              <view class="nutrition-icon" :style="{ backgroundColor: type.color }">
+                <text class="icon-text">{{ type.name.charAt(0) }}</text>
+              </view>              <view class="nutrition-info">
+                <text class="nutrition-name">{{ type.name }}</text>
+                <text class="nutrition-average">
+                  平均 {{ Math.round(weeklyNutritionTrend.reduce((sum, day) => sum + (day[type.key] || 0), 0) / 7) }}%
+                </text>
+              </view>              <view class="nutrition-status" 
+                    :style="{ 
+                      backgroundColor: getNutrientStatus(Math.round(weeklyNutritionTrend.reduce((sum, day) => sum + (day[type.key] || 0), 0) / 7)).color + '20',
+                      color: getNutrientStatus(Math.round(weeklyNutritionTrend.reduce((sum, day) => sum + (day[type.key] || 0), 0) / 7)).color
+                    }">
+                {{ getNutrientStatus(Math.round(weeklyNutritionTrend.reduce((sum, day) => sum + (day[type.key] || 0), 0) / 7)).text }}
+              </view>
+            </view>
+            
+            <!-- 一周趋势进度条 -->
+            <view class="week-progress">
+              <view v-for="(dayData, index) in weeklyNutritionTrend" :key="index" class="day-progress">                <view class="progress-bar">
+                  <view class="progress-fill" 
+                        :style="{ 
+                          width: getPercentageHeight(dayData[type.key] || 0), 
+                          backgroundColor: type.color,
+                          opacity: (dayData[type.key] || 0) / 100
+                        }">
+                  </view>
+                </view>
+                <text class="progress-day">{{ dayData.day.substring(1) }}</text>
+                <text class="progress-value">{{ dayData[type.key] || 0 }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 今日营养达标情况 -->
+        <view class="today-summary">
+          <text class="today-title">今日营养达标率</text>          <view class="achievement-ring">
+            <view class="ring-progress" :style="{ 
+              background: `conic-gradient(#4CAF50 0deg ${((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4 * 3.6}deg, #f0f0f0 ${((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4 * 3.6}deg 360deg)` 
+            }">
+              <view class="ring-inner">
+                <text class="achievement-percent">{{ Math.round(((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4) }}%</text>
+                <text class="achievement-label">综合达标</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -172,6 +230,157 @@ onLoad(() => {
   border-radius: 8px;
 }
 
+/* 营养趋势卡片样式 */
+.nutrition-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.nutrition-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nutrition-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.nutrition-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-text {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.nutrition-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nutrition-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.nutrition-average {
+  font-size: 12px;
+  color: #666;
+}
+
+.nutrition-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.week-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.day-progress {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-day {
+  font-size: 10px;
+  color: #666;
+}
+
+.progress-value {
+  font-size: 8px;
+  color: #999;
+}
+
+.today-summary {
+  margin-top: 20px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.today-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.achievement-ring {
+  position: relative;
+}
+
+.ring-progress {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-inner {
+  width: 70px;
+  height: 70px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.achievement-percent {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.achievement-label {
+  font-size: 10px;
+  color: #666;
+}
+
 .nutrition-tags {
   display: flex;
   flex-wrap: wrap;
@@ -224,9 +433,5 @@ onLoad(() => {
 .iconfont {
   font-size: 24px;
   font-family: "iconfont";
-}
-
-.icon-check::before {
-  content: "\e64f"; /* 这个是示例，实际需要根据你的字体图标库中的编码 */
 }
 </style>

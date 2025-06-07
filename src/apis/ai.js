@@ -43,3 +43,9 @@ export const getNutrientAnalysisApi = (studentNumber) => {
     url: `/client/user/nutritionAnalysis/${studentNumber}`,
   });
 }
+// 获取本周营养趋势
+export const getWeeklyNutritionTrendApi = (studentNumber) => {
+  return request({
+    url: `/client/user/thisWeekNutritionTrend/${studentNumber}`
+  })
+}
