@@ -59,7 +59,7 @@ export const request = (options) => {
           // 清除本地存储的用户信息
           uni.removeStorageSync("userInfo")
           uni.removeStorageSync("token")
-          uni.navigateTo({ url: "/pages/login/login" })
+          uni.reLaunch({ url: '/pages/login/login' })
           reject(res);
         } else {
           uni.showToast({
