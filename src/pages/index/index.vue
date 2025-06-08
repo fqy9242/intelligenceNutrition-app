@@ -435,31 +435,24 @@ const openCamera = () => {
       const tempFilePath = res.tempFilePaths[0];
       uni.showLoading({
         title: '识别中...'
-      });
-
-      // 调用AI识别接口
+      });      // 调用AI识别接口
       RecognizeFoodApi(tempFilePath).then(result => {
         uni.hideLoading();
         // console.log('识别结果:', result);
         
-        // 先显示识别成功提示
+        // 显示识别成功提示并立即跳转
         uni.showToast({
-          title: '识别成功',
+          title: '识别成功，正在跳转...',
           icon: 'success',
           duration: 1000
         });
         
-        // 延迟跳转，确保 toast 显示完成
-        setTimeout(() => {
-          const imageParam = encodeURIComponent(tempFilePath);
-          const resultParam = encodeURIComponent(JSON.stringify(result));
-          uni.navigateTo({
-            url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`,
-            success: () => {
-              console.log('页面跳转成功');
-            }
-          });
-        }, 1200);
+        // 立即跳转到识别结果页面
+        const imageParam = encodeURIComponent(tempFilePath);
+        const resultParam = encodeURIComponent(JSON.stringify(result));
+        uni.navigateTo({
+          url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`
+        });
       })
     }
   });
