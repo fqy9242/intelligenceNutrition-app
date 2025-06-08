@@ -214,7 +214,7 @@ const saveDietRecord = async () => {
     });
     return;
   }
-  // 构造完整的日期时间字符串 (ISO 8601格式)
+  // 构造完整的日期时间字符串
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -290,7 +290,7 @@ const saveWaterRecord = async () => {
     return;
   }
   
-  // 构造完整的日期时间字符串 (ISO 8601格式)
+  // 构造完整的日期时间字符串
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -363,7 +363,7 @@ const saveSportRecord = async () => {
     return;
   }
   
-  // 构造完整的日期时间字符串 (ISO 8601格式)
+  // 构造完整的日期时间字符串
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -440,7 +440,7 @@ const openCamera = () => {
       // 调用AI识别接口
       RecognizeFoodApi(tempFilePath).then(result => {
         uni.hideLoading();
-        console.log('识别结果:', result);
+        // console.log('识别结果:', result);
         
         // 先显示识别成功提示
         uni.showToast({
@@ -465,12 +465,14 @@ const openCamera = () => {
   });
 };
 onLoad(() => {
-  getNextCheckDay()
-  getUserBMI()
-  getDietRecord() // 加载今日饮食记录
-  getWaterRecord() // 加载今日饮水记录
-  getSportRecord() // 加载今日运动记录
-  getTodayRecommendIntake()
+  Promise.all([
+    getNextCheckDay(),
+    Promise.resolve(getUserBMI()),
+    getDietRecord(),
+    getWaterRecord(),
+    getSportRecord(),
+    getTodayRecommendIntake(),
+  ])
 })
 // 下拉刷新状态
 const isTriggered = ref(false);

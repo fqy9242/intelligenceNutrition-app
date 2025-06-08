@@ -10,38 +10,35 @@ const loginForm = reactive({
 });
 
 // 错误信息
-const errorMessage = ref('');
+const errorMessage = ref('')
 
 // 表单验证
 const validateForm = () => {
     if (!loginForm.studentNumber) {
-        errorMessage.value = '请输入用户名';
-        return false;
+        errorMessage.value = '请输入用户名'
+        return false
     }
     if (!loginForm.password) {
-        errorMessage.value = '请输入密码';
-        return false;
+        errorMessage.value = '请输入密码'
+        return false
     }
-    return true;
+    return true
 };
 
 // 登录处理函数
 const handleLogin = async ()  => {
-    errorMessage.value = '';
-
+    errorMessage.value = ''
     if (!validateForm()) {
         return;
     }
-
-
     uni.showLoading({
         title: '登录中...'
     });
-    const res = await loginApi(loginForm);
+    const res = await loginApi(loginForm)
     uni.hideLoading();
     if (res.code === 200) {
         // 登录成功， 保存用户信息
-        uni.setStorageSync('token', res.data.token);
+        uni.setStorageSync('token', res.data.token)
         uni.setStorageSync('userInfo', {
             id: res.data.id,
             name: res.data.name,
@@ -68,7 +65,7 @@ const handleLogin = async ()  => {
         }, 1500);
     } else {
         // 登录失败
-        errorMessage.value = res.message || '登录失败，请重试';
+        errorMessage.value = res.message || '登录失败，请重试'
     }
 
 }

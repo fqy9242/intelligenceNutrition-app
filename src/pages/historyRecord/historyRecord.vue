@@ -10,19 +10,18 @@ import { getDietRecordApi, getSportRecordApi } from '@/apis/user'
 const dietRecords = ref([])
 
 // 餐次选项
-const mealTypes = ['早餐', '午餐', '晚餐', '加餐'];
+const mealTypes = ['早餐', '午餐', '晚餐', '加餐']
 
 // 根据数字获取餐次名称
 const getMealTypeName = (mealType) => {
-  return mealTypes[mealType] || mealTypes[0];
+  return mealTypes[mealType] || mealTypes[0]
 };
 
 // 获取饮食记录
 const getDietRecord = async () => {
-  try {
-    const res = await getDietRecordApi(uni.getStorageSync('userInfo').studentNumber, 0);
-    const records = [];
-    const data = res.data;
+    const res = await getDietRecordApi(uni.getStorageSync('userInfo').studentNumber, 0)
+    const records = []
+    const data = res.data
 
     // 检查数据是否为数组
     if (Array.isArray(data)) {
@@ -45,11 +44,11 @@ const getDietRecord = async () => {
           }),
           date: new Date(item.createTime).toLocaleDateString('zh-CN')
         };
-        records.push(record);
+        records.push(record)
       });
 
       // 按时间排序（最新的在前面）
-      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
     } else {
       // 兼容旧格式数据（如果后端还可能返回旧格式）
       // 处理早餐数据
@@ -100,7 +99,7 @@ const getDietRecord = async () => {
             hour12: false
           }),
           date: new Date(data.dinner.mealTime).toLocaleDateString('zh-CN')
-        });
+        })
       }
 
       // 处理加餐数据
@@ -117,28 +116,23 @@ const getDietRecord = async () => {
             hour12: false
           }),
           date: new Date(data.other.mealTime).toLocaleDateString('zh-CN')
-        });
+        })
       }
     }
 
     // 更新饮食记录列表
-    dietRecords.value = records;
-    console.log('处理后的饮食记录:', dietRecords.value);
-  } catch (error) {
-    console.error('获取饮食记录失败:', error);
-    dietRecords.value = [];
-  }
+    dietRecords.value = records
+
 };
 
 // 运动记录数据
-const exerciseRecords = ref([]);
+const exerciseRecords = ref([])
 
 // 获取运动记录
 const getSportRecord = async () => {
-  try {
-    const res = await getSportRecordApi(uni.getStorageSync('userInfo').studentNumber, 0);
-    const records = [];
-    const data = res.data;
+    const res = await getSportRecordApi(uni.getStorageSync('userInfo').studentNumber, 0)
+    const records = []
+    const data = res.data
 
     // 检查数据是否为数组
     if (Array.isArray(data)) {
@@ -157,37 +151,29 @@ const getSportRecord = async () => {
           }),
           date: new Date(item.createTime).toLocaleDateString('zh-CN')
         };
-        records.push(record);
+        records.push(record)
       });
 
       // 按时间排序（最新的在前面）
-      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+      records.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
     }
 
     // 更新运动记录列表
-    exerciseRecords.value = records;
-    console.log('处理后的运动记录:', exerciseRecords.value);
-  } catch (error) {
-    console.error('获取运动记录失败:', error);
-    exerciseRecords.value = [];
-  }
-};
+    exerciseRecords.value = records
+    // console.log('处理后的运动记录:', exerciseRecords.value)
+}
 
 // 健康数据记录
-const healthDataRecords = ref([]);
+const healthDataRecords = ref([])
 
 // 获取健康数据记录
 const getHealthHistory = async () => {
-  try {
-    const res = await getHealthHistoryApi(uni.getStorageSync('userInfo').studentNumber);
-    
+    const res = await getHealthHistoryApi(uni.getStorageSync('userInfo').studentNumber)
     // 格式化健康数据记录
     if (res.data && Array.isArray(res.data)) {
       healthDataRecords.value = res.data.map(record => {
-        let formattedDate = '未知日期';
+        let formattedDate = '未知日期'
         
-        // 尝试多种日期格式化方式
-        try {
           if (record.createTime) {
             const date = new Date(record.createTime);
             // 检查日期是否有效
@@ -199,40 +185,32 @@ const getHealthHistory = async () => {
               });
             } else {
               // 如果直接解析失败，尝试其他方式
-              console.warn('日期解析失败，原始值:', record.createTime);
+              console.warn('日期解析失败，原始值:', record.createTime)
               // 如果是字符串格式的日期，尝试截取前10位
-              const dateStr = String(record.createTime);
+              const dateStr = String(record.createTime)
               if (dateStr.length >= 10) {
-                formattedDate = dateStr.substring(0, 10).replace(/-/g, '/');
+                formattedDate = dateStr.substring(0, 10).replace(/-/g, '/')
               } else {
-                formattedDate = '未知日期';
+                formattedDate = '未知日期'
               }
             }
           } else {
-            formattedDate = '未设置日期';
+            formattedDate = '未设置日期'
           }
-        } catch (dateError) {
-          console.error('日期格式化错误:', dateError);
-          formattedDate = '日期格式错误';
-        }
         
         return {
           ...record,
           date: formattedDate
-        };
-      });
+        }
+      })
     }
-    
-    console.log('健康数据记录 API 响应:', res.data);
-    console.log('格式化后的健康数据记录:', healthDataRecords.value);
-  } catch (error) {
-    console.error('获取健康数据记录失败:', error);
-  }
-};
+}
 onLoad(() => {
-  getHealthHistory()
-  getDietRecord()
-  getSportRecord()
+  Promise.all([
+    getHealthHistory(),
+    getDietRecord(),
+    getSportRecord()
+  ])
 })
 </script>
 

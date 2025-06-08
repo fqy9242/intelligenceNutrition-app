@@ -1,11 +1,11 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-14 -->
 <script setup>
-import { ref, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { addDietRecordApi } from '@/apis/user';
+import { ref, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { addDietRecordApi } from '@/apis/user'
 // 获取页面传递的参数
-const image = ref('');
+const image = ref('')
 
 // 餐次类型
 const mealTypes = [
@@ -17,26 +17,26 @@ const mealTypes = [
 
 // 自动获取当前时间对应的餐次类型
 const getAutoMealType = () => {
-  const now = new Date();
-  const hour = now.getHours();
-  
+  const now = new Date()
+  const hour = now.getHours()
+
   // 根据时间自动判断餐次
   if (hour >= 6 && hour < 11) {
-    return 0; // 早餐 (6:00-10:59)
+    return 0 // 早餐 (6:00-10:59)
   } else if (hour >= 11 && hour < 15) {
-    return 1; // 午餐 (11:00-14:59)
+    return 1 // 午餐 (11:00-14:59)
   } else if (hour >= 17 && hour < 21) {
-    return 2; // 晚餐 (17:00-20:59)
+    return 2 // 晚餐 (17:00-20:59)
   } else {
-    return 3; // 加餐 (其他时间)
+    return 3 // 加餐 (其他时间)
   }
-};
+}
 
 // 选中的餐次 - 默认根据当前时间自动选择
-const selectedMealType = ref(getAutoMealType());
+const selectedMealType = ref(getAutoMealType())
 
 // 食物重量
-const foodWeight = ref(100); // 默认100g
+const foodWeight = ref(100) // 默认100g
 
 // 识别结果
 const recognitionResult = ref({
@@ -45,25 +45,25 @@ const recognitionResult = ref({
   nutrients: [],
   stars: 0,
   suitablePeople: ''
-});
+})
 
 // 添加到今日饮食
 const addToTodaysDiet = async () => {
     // 获取学生号（从本地存储或用户信息中获取）
-    const studentNumber = uni.getStorageSync('studentNumber') || uni.getStorageSync('userInfo')?.studentNumber;
+    const studentNumber = uni.getStorageSync('studentNumber') || uni.getStorageSync('userInfo')?.studentNumber
     
     if (!studentNumber) {
       uni.showToast({
         title: '请先登录',
         icon: 'error'
-      });
-      return;
+      })
+      return
     }
 
     // 解析营养成分数据
     const parseNutrientValue = (valueStr) => {
-      return parseFloat(valueStr.replace(/[^\d.]/g, '')) || 0;
-    };
+      return parseFloat(valueStr.replace(/[^\d.]/g, '')) || 0
+    }
 
     // 构建请求数据
     const dietData = {
@@ -76,45 +76,45 @@ const addToTodaysDiet = async () => {
       foodFat: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '脂肪')?.value || '0'),
       foodCarbohydrate: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '碳水化合物')?.value || '0'),
       foodDietaryFiber: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '膳食纤维')?.value || '0')
-    };
+    }
 
     uni.showLoading({
       title: '添加中...'
-    });
+    })
 
-    await addDietRecordApi(dietData);
-    
-    uni.hideLoading();
+    await addDietRecordApi(dietData)
+
+    uni.hideLoading()
     uni.showToast({
       title: '已添加到今日饮食',
       icon: 'success'
-    });
-    
+    })
+
     // 延迟返回首页
     setTimeout(() => {
       uni.switchTab({
         url: '/pages/index/index'
-      });
-    }, 1500);
+      })
+    }, 1500)
 
-};
+}
 
 // 返回首页
 const goBack = () => {
-  uni.navigateBack();
-};
+  uni.navigateBack()
+}
 onLoad((options) => {
   // console.log('食物识别页面接收到的参数:', options);
   
   if (options.image) {
-    image.value = decodeURIComponent(options.image);
+    image.value = decodeURIComponent(options.image)
     // console.log('接收到的图片路径:', image.value);
   }
-      const resultData = JSON.parse(decodeURIComponent(options.result));
+      const resultData = JSON.parse(decodeURIComponent(options.result))
       // console.log('接收到的识别结果:', resultData);
       // 更新识别结果
-      recognitionResult.value = formatRecognitionResult(resultData);
-});
+      recognitionResult.value = formatRecognitionResult(resultData)
+})
 
 // 格式化识别结果
 const formatRecognitionResult = (rawResult) => {
@@ -128,8 +128,8 @@ const formatRecognitionResult = (rawResult) => {
       ],
       stars: rawResult.star || 0, 
       suitablePeople: rawResult.suitablePeople || '一般人群'
-    };
-};
+    }
+}
 </script>
 
 <template>

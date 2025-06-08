@@ -1,27 +1,27 @@
 <!-- Author: qht -->
 <!-- Date: 2025-05-07 -->
 <script setup>
-import { onLoad } from '@dcloudio/uni-app';
-import { computed, onMounted, ref } from 'vue';
-import { getStudentSportCountApi, getHealthCheckInDaysApi } from '@/apis/user';
+import { onLoad } from '@dcloudio/uni-app'
+import { computed, onMounted, ref } from 'vue'
+import { getStudentSportCountApi, getHealthCheckInDaysApi } from '@/apis/user'
 const userInfo = ref(null)
 // 健康记录信息
 const healthRecord = ref({
   currentWeekSport: 0,
   healthCheckIn: 0
-});
+})
 
 // 获取健康打卡天数
 const getHealthCheckInDays = async () => {
-  const res = await getHealthCheckInDaysApi(uni.getStorageSync('userInfo').studentNumber);
-  healthRecord.value.healthCheckIn = res.data || 0;
+  const res = await getHealthCheckInDaysApi(uni.getStorageSync('userInfo').studentNumber)
+  healthRecord.value.healthCheckIn = res.data || 0
 }
 
 // 获取本周运动次数
 const getStudentSportCount = async () => {
-  const res = await getStudentSportCountApi(uni.getStorageSync('userInfo').studentNumber);
-  healthRecord.value.currentWeekSport = res.data || 0;
-};
+  const res = await getStudentSportCountApi(uni.getStorageSync('userInfo').studentNumber)
+  healthRecord.value.currentWeekSport = res.data || 0
+}
 
 // 处理头像点击
 const avatarOnHandle = () => {
@@ -29,32 +29,32 @@ const avatarOnHandle = () => {
   uni.previewImage({
     urls: [userInfo.value.avatar],
     current: 0
-  });
-};
+  })
+}
 
 // 修改个人信息
 const editProfile = () => {
   uni.showToast({
     title: '暂未开放此功能',
     icon: 'none'
-  });
-};
+  })
+}
 
 // 修改密码
 const changePassword = () => {
   uni.showToast({
     title: '暂未开放此功能',
     icon: 'none'
-  });
-};
+  })
+}
 
 // 隐私设置
 const privacySettings = () => {
   uni.showToast({
     title: '暂未开放此功能',
     icon: 'none'
-  });
-};
+  })
+}
 
 // 关于我们
 const aboutUs = () => {
@@ -62,8 +62,8 @@ const aboutUs = () => {
     title: 'by 覃惠通 github.com/fqy9242',
     icon: 'none',
     duration: 2000
-  });
-};
+  })
+}
 
 // 退出登录
 const logout = () => {
@@ -90,20 +90,20 @@ const logout = () => {
         }, 1500);
       }
     }
-  });
-};
+  })
+}
 
 onMounted(() => {
   // 获取本周运动次数
   getStudentSportCount()
-});
+})
 
 const getAllergen = computed(() => {
    if (!userInfo.value || !userInfo.value.allergen) {
-    return '无';
+    return '无'
    }
-  return '[ ' + userInfo.value.allergen.join(', ') + ' ]';
-});
+  return '[ ' + userInfo.value.allergen.join(', ') + ' ]'
+})
 onLoad(() => {
   getHealthCheckInDays(uni.getStorageSync('userInfo').studentNumber);
   userInfo.value = uni.getStorageSync('userInfo')
@@ -116,8 +116,8 @@ onLoad(() => {
     setTimeout(() => {
       uni.reLaunch({
         url: '/pages/login/login'
-      });
-    }, 1500);
+      })
+    }, 1500)
   }
 })
 </script>

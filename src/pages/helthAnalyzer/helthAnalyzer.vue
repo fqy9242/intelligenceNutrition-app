@@ -6,14 +6,14 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getHealthAdviceApi, getNutrientAnalysisApi, getWeeklyNutritionTrendApi } from '@/apis/ai'
 import { getHealthScoreApi } from '@/apis/user'
 // 健康评分数据
-const healthScore = ref(0);
-const scoreImprovement = ref(0);
+const healthScore = ref(0)
+const scoreImprovement = ref(0)
 
 // 营养摄入分析数据
-const nutritionAnalysis = ref([]);
+const nutritionAnalysis = ref([])
 
 // 本周营养趋势数据
-const weeklyNutritionTrend = ref([]);
+const weeklyNutritionTrend = ref([])
 
 // 营养素类型配置
 const nutritionTypes = ref([
@@ -25,15 +25,15 @@ const nutritionTypes = ref([
 
 // 获取营养素的百分比高度
 const getPercentageHeight = (value) => {
-  return Math.min(value, 100) + '%';
+  return Math.min(value, 100) + '%'
 };
 
 // 获取营养素状态
 const getNutrientStatus = (value) => {
-  if (value >= 90) return { text: '优秀', color: '#4CAF50' };
-  if (value >= 80) return { text: '良好', color: '#2196F3' };
-  if (value >= 70) return { text: '一般', color: '#FF9800' };
-  return { text: '不足', color: '#F44336' };
+  if (value >= 90) return { text: '优秀', color: '#4CAF50' }
+  if (value >= 80) return { text: '良好', color: '#2196F3' }
+  if (value >= 70) return { text: '一般', color: '#FF9800' }
+  return { text: '不足', color: '#F44336' }
 };
 
 // 营养素状态颜色映射
@@ -44,8 +44,8 @@ const getStatusColor = (status) => {
     '偏高': '#FF5733',
     '不足': '#FF9800'
   };
-  return colorMap[status] || '#666';
-};
+  return colorMap[status] || '#666'
+}
 
 // 营养素名称映射
 const getNutrientName = (key) => {
@@ -55,13 +55,13 @@ const getNutrientName = (key) => {
     'carbohydrate': '碳水化合物',
     'vitamin': '维生素'
   };
-  return nameMap[key] || key;
+  return nameMap[key] || key
 };
 
 // 获取营养分析数据
 const getNutrientAnalysis = async (studentNumber) => {
-    const response = await getNutrientAnalysisApi(studentNumber);
-    const data = response.data || {};
+    const response = await getNutrientAnalysisApi(studentNumber)
+    const data = response.data || {}
     // 将后端数据转换为前端需要的格式
     nutritionAnalysis.value = Object.keys(data).map(key => ({
       name: getNutrientName(key),
@@ -71,32 +71,32 @@ const getNutrientAnalysis = async (studentNumber) => {
 };
 
 // 健康建议
-const healthSuggestions = ref([]);
+const healthSuggestions = ref([])
 // 获取健康建议
 const getHealthSuggestions = async (studentNumber) => {
-    const response = await getHealthAdviceApi(studentNumber);
-    healthSuggestions.value = response.data || [];
+    const response = await getHealthAdviceApi(studentNumber)
+    healthSuggestions.value = response.data || []
 }
 // 获取健康评分
 const getHealthScore = async (studentNumber) => {
-    const response = await getHealthScoreApi(studentNumber);
-    healthScore.value = response.data.nowScore || 0;
-    const lastScore = response.data.lastScore || 0;
-    scoreImprovement.value = healthScore.value - lastScore;
+    const response = await getHealthScoreApi(studentNumber)
+    healthScore.value = response.data.nowScore || 0
+    const lastScore = response.data.lastScore || 0
+    scoreImprovement.value = healthScore.value - lastScore
 }
 
 // 获取本周营养趋势数据
 const getWeeklyNutritionTrend = async (studentNumber) => {
-    const response = await getWeeklyNutritionTrendApi(studentNumber);
-    weeklyNutritionTrend.value = response.data || [];
+    const response = await getWeeklyNutritionTrendApi(studentNumber)
+    weeklyNutritionTrend.value = response.data || []
 }
 
 onLoad(() => {
-  const studentNumber = uni.getStorageSync('userInfo')?.studentNumber;
-    getHealthSuggestions(studentNumber);
-    getHealthScore(studentNumber);
-    getNutrientAnalysis(studentNumber);
-    getWeeklyNutritionTrend(studentNumber);
+  const studentNumber = uni.getStorageSync('userInfo')?.studentNumber
+    getHealthSuggestions(studentNumber)
+    getHealthScore(studentNumber)
+    getNutrientAnalysis(studentNumber)
+    getWeeklyNutritionTrend(studentNumber)
 })
 </script>
 
