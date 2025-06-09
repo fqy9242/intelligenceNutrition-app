@@ -37,12 +37,6 @@
 			"style": {
 				"navigationBarTitleText": "登录"
 			}
-		},
-		{
-			"path": "pages/foodRecognition/foodRecognition",
-			"style": {
-				"navigationBarTitleText": "食物识别"
-			}
 		}
 	],
 	"globalStyle": {

@@ -425,6 +425,63 @@ const addExerciseRecord = () => {
   showSportModal.value = true;
 };
 
+// 食物识别弹窗相关数据
+const showFoodModal = ref(false);
+const recognizedImage = ref('');
+const recognitionResult = ref({
+  name: '',
+  calories: '',
+  nutrients: [],
+  stars: 0,
+  suitablePeople: ''
+});
+
+// 餐次类型
+const mealTypes2 = [
+  { label: '早餐', value: 0 },
+  { label: '午餐', value: 1 },
+  { label: '晚餐', value: 2 },
+  { label: '加餐', value: 3 }
+];
+
+// 自动获取当前时间对应的餐次类型
+const getAutoMealType = () => {
+  const now = new Date()
+  const hour = now.getHours()
+
+  // 根据时间自动判断餐次
+  if (hour >= 6 && hour < 11) {
+    return 0 // 早餐 (6:00-10:59)
+  } else if (hour >= 11 && hour < 15) {
+    return 1 // 午餐 (11:00-14:59)
+  } else if (hour >= 17 && hour < 21) {
+    return 2 // 晚餐 (17:00-20:59)
+  } else {
+    return 3 // 加餐 (其他时间)
+  }
+}
+
+// 选中的餐次 - 默认根据当前时间自动选择
+const selectedMealType2 = ref(getAutoMealType());
+
+// 食物重量
+const foodWeight2 = ref(100); // 默认100g
+
+// 格式化识别结果
+const formatRecognitionResult = (rawResult) => {
+  return {
+    name: rawResult?.name || '未知食物',
+    calories: rawResult?.calories || '0 kcal',
+    nutrients: rawResult?.nutrients || [
+      { name: '蛋白质', value: '0g' },
+      { name: '脂肪', value: '0g' },
+      { name: '碳水化合物', value: '0g' }
+    ],
+    stars: rawResult?.star || rawResult?.stars || 0,
+    suitablePeople: rawResult?.suitablePeople || '一般人群'
+  }
+}
+
 // 打开相机
 const openCamera = () => {
   uni.chooseImage({
@@ -435,29 +492,100 @@ const openCamera = () => {
       const tempFilePath = res.tempFilePaths[0];
       uni.showLoading({
         title: '识别中...'
-      });      // 调用AI识别接口
+      });
+      
+      // 调用AI识别接口
       RecognizeFoodApi(tempFilePath).then(result => {
         uni.hideLoading();
-        // console.log('识别结果:', result);
+        
+        if (!result || !result.name) {
+          uni.showToast({
+            title: '识别失败，请重试',
+            icon: 'error'
+          });
+          return;
+        }
+        
+        // 设置识别结果数据
+        recognizedImage.value = tempFilePath;
+        recognitionResult.value = formatRecognitionResult(result);
+        selectedMealType2.value = getAutoMealType(); // 重新获取当前时间对应的餐次
+        foodWeight2.value = 100; // 重置为默认重量
+        
+        // 显示食物识别结果弹窗
+        showFoodModal.value = true;
         
         uni.showToast({
           title: '识别成功',
           icon: 'success',
-          duration: 1500,
-          success: () => {
-            setTimeout(() => {
-              const imageParam = tempFilePath
-              const resultParam = JSON.stringify(result)
-              uni.navigateTo({
-                url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`
-              });
-            }, 100); 
-          }
+          duration: 1000
         });
       })
     }
   });
 };
+
+// 关闭食物识别弹窗
+const closeFoodModal = () => {
+  showFoodModal.value = false;
+  // 重置数据
+  recognizedImage.value = '';
+  recognitionResult.value = {
+    name: '',
+    calories: '',
+    nutrients: [],
+    stars: 0,
+    suitablePeople: ''
+  };
+  selectedMealType2.value = getAutoMealType();
+  foodWeight2.value = 100;
+};
+
+// 添加识别食物到今日饮食
+const addRecognizedFoodToDiet = async () => {
+  // 获取学生号
+  const studentNumber = uni.getStorageSync('studentNumber') || uni.getStorageSync('userInfo')?.studentNumber;
+  
+  if (!studentNumber) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'error'
+    });
+    return;
+  }
+
+  // 解析营养成分数据
+  const parseNutrientValue = (valueStr) => {
+    return parseFloat(valueStr.replace(/[^\d.]/g, '')) || 0;
+  };
+  // 构建请求数据
+  const dietData = {
+    studentNumber: studentNumber,
+    mealType: mealTypes2[selectedMealType2.value].value,
+    foodName: recognitionResult.value.name,
+    foodWeight: foodWeight2.value,
+    foodCalorie: parseNutrientValue(recognitionResult.value.calories),
+    foodProtein: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '蛋白质')?.value || '0'),
+    foodFat: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '脂肪')?.value || '0'),
+    foodCarbohydrate: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '碳水化合物')?.value || '0'),
+    foodDietaryFiber: parseNutrientValue(recognitionResult.value.nutrients.find(n => n.name === '膳食纤维')?.value || '0')
+  };
+
+  uni.showLoading({
+    title: '添加中...'
+  });
+  const result = await addDietRecordApi(dietData);
+    uni.hideLoading();
+    uni.showToast({
+      title: '已添加到今日饮食',
+      icon: 'success'
+    });
+    // 关闭弹窗
+    closeFoodModal();
+    // 刷新饮食记录
+    getDietRecord();
+};
+
 onLoad(() => {
   Promise.all([
     getNextCheckDay(),
@@ -714,6 +842,65 @@ const onRefresherrefresh = async () => {
         <view class="modal-footer">
           <button class="cancel-btn" @tap="cancelSportRecord">取消</button>
           <button class="confirm-btn" @tap="saveSportRecord">保存</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 添加食物识别结果到饮食记录弹窗 -->
+    <view v-if="showFoodModal" class="modal-overlay" @tap="closeFoodModal">
+      <view class="modal-container" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">食物识别结果</text>
+          <text class="modal-close" @tap="closeFoodModal">×</text>
+        </view>
+
+        <view class="modal-body">
+          <!-- 识别的食物图片 -->
+          <view class="image-preview">
+            <image :src="recognizedImage" mode="aspect-fill" class="food-image"></image>
+          </view>          <!-- 识别的食物信息 -->
+          <view class="food-info">
+            <view class="info-item">
+              <text class="info-label">食物名称:</text>
+              <text class="info-value">{{ recognitionResult.name }}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">卡路里:</text>
+              <text class="info-value">{{ recognitionResult.calories }}</text>
+            </view>
+            <view class="info-item" v-for="(nutrient, index) in recognitionResult.nutrients" :key="index">
+              <text class="info-label">{{ nutrient.name }}:</text>
+              <text class="info-value">{{ nutrient.value }}</text>
+            </view>
+            <view class="info-item" v-if="recognitionResult.stars > 0">
+              <text class="info-label">推荐指数:</text>
+              <text class="info-value">{{ '⭐'.repeat(recognitionResult.stars) }}</text>
+            </view>
+            <view class="info-item" v-if="recognitionResult.suitablePeople">
+              <text class="info-label">适合人群:</text>
+              <text class="info-value">{{ recognitionResult.suitablePeople }}</text>
+            </view>
+          </view><!-- 餐次选择 -->
+          <view class="form-group">
+            <text class="form-label">餐次</text>
+            <picker :value="selectedMealType2" :range="mealTypes2" range-key="label" @change="(e) => { selectedMealType2 = e.detail.value }">
+              <view class="picker-item">
+                {{ mealTypes2[selectedMealType2].label }}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+
+          <!-- 食物重量 -->
+          <view class="form-group">
+            <text class="form-label">食物重量</text>
+            <input v-model="foodWeight2" class="form-input" type="number" placeholder="请填写食物重量(g)" />
+          </view>
+        </view>
+
+        <view class="modal-footer">
+          <button class="cancel-btn" @tap="closeFoodModal">关闭</button>
+          <button class="confirm-btn" @tap="addRecognizedFoodToDiet">添加到今日饮食</button>
         </view>
       </view>
     </view>
@@ -1061,7 +1248,50 @@ const onRefresherrefresh = async () => {
   transform: scale(0.98);
 }
 
-/* 响应式设计 - 小屏设备适配 */
+/* 食物识别弹窗样式 */
+.image-preview {
+  width: 100%;
+  height: 150px;
+  background-color: #eee;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.food-image {
+  width: 100%;
+  height: 100%;
+}
+
+.food-info {
+  margin-bottom: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: bold;
+}
+
+/* iPhone SE 等窄屏设备适配 */
 @media screen and (max-height: 600px) {
   .modal-container {
     min-height: auto;
