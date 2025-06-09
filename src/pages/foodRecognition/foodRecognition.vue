@@ -49,6 +49,7 @@ const recognitionResult = ref({
 
 // 添加到今日饮食
 const addToTodaysDiet = async () => {
+  try {
     // 获取学生号（从本地存储或用户信息中获取）
     const studentNumber = uni.getStorageSync('studentNumber') || uni.getStorageSync('userInfo')?.studentNumber
     
@@ -97,6 +98,14 @@ const addToTodaysDiet = async () => {
       })
     }, 1500)
 
+  } catch (error) {
+    uni.hideLoading()
+    console.error('添加饮食记录失败:', error);
+    uni.showToast({
+      title: '添加失败，请重试',
+      icon: 'error'
+    });
+  }
 }
 
 // 返回首页
@@ -104,16 +113,37 @@ const goBack = () => {
   uni.navigateBack()
 }
 onLoad((options) => {
-  // console.log('食物识别页面接收到的参数:', options);
+  console.log('食物识别页面接收到的参数:', options);
   
-  if (options.image) {
-    image.value = decodeURIComponent(options.image)
-    // console.log('接收到的图片路径:', image.value);
-  }
+  try {
+    // 处理图片参数
+    if (options.image) {
+      image.value = decodeURIComponent(options.image)
+      console.log('接收到的图片路径:', image.value);
+    }
+    
+    // 处理识别结果参数
+    if (options.result) {
       const resultData = JSON.parse(decodeURIComponent(options.result))
-      // console.log('接收到的识别结果:', resultData);
+      console.log('接收到的识别结果:', resultData);
       // 更新识别结果
       recognitionResult.value = formatRecognitionResult(resultData)
+    } else {
+      console.error('缺少识别结果参数');
+      uni.showToast({
+        title: '数据加载失败',
+        icon: 'error'
+      });
+    }
+  } catch (error) {
+    console.error('解析页面参数失败:', error);
+    uni.showToast({
+      title: '数据解析失败',
+      icon: 'error'
+    });
+    // 设置默认值
+    recognitionResult.value = formatRecognitionResult({});
+  }
 })
 
 // 格式化识别结果

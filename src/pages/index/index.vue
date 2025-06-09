@@ -440,18 +440,19 @@ const openCamera = () => {
         uni.hideLoading();
         // console.log('识别结果:', result);
         
-        // 显示识别成功提示并立即跳转
         uni.showToast({
-          title: '识别成功，正在跳转...',
+          title: '识别成功',
           icon: 'success',
-          duration: 1000
-        });
-        
-        // 立即跳转到识别结果页面
-        const imageParam = encodeURIComponent(tempFilePath);
-        const resultParam = encodeURIComponent(JSON.stringify(result));
-        uni.navigateTo({
-          url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`
+          duration: 1500,
+          success: () => {
+            setTimeout(() => {
+              const imageParam = tempFilePath
+              const resultParam = JSON.stringify(result)
+              uni.navigateTo({
+                url: `/pages/foodRecognition/foodRecognition?image=${imageParam}&result=${resultParam}`
+              });
+            }, 100); 
+          }
         });
       })
     }
