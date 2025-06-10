@@ -4,10 +4,12 @@
     <view class="card-content">
       <view class="suggestion-item">
         <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
+        <image src="@/static/icon/drinking.png" class="suggestion-icon" />
         <text class="suggestion-text">记得补充水分，今日已饮水{{ totalWaterIntake }}ml</text>
       </view>
       <view class="suggestion-item">
         <text class="iconfont icon-bell" style="color: #4CAF50;"></text>
+        <image src="@/static/icon/checkIn.png" class="suggestion-icon" />
         <text class="suggestion-text">距离下次体检还有{{ nextCheckDay }}天</text>
       </view>
     </view>
@@ -47,6 +49,13 @@ defineProps({
 
 .suggestion-item:last-child {
   border-bottom: none;
+}
+
+.suggestion-icon {
+  width: 24px;
+  height: 24px;
+  margin: 0 8px;
+  flex-shrink: 0;
 }
 
 .suggestion-text {
