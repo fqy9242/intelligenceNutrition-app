@@ -140,20 +140,6 @@ onLoad(() => {
             </view>
           </view>
         </view>
-        
-        <!-- 今日营养达标情况 -->
-        <view class="today-summary">
-          <text class="today-title">今日营养达标率</text>          <view class="achievement-ring">
-            <view class="ring-progress" :style="{ 
-              background: `conic-gradient(#4CAF50 0deg ${((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4 * 3.6}deg, #f0f0f0 ${((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4 * 3.6}deg 360deg)` 
-            }">
-              <view class="ring-inner">
-                <text class="achievement-percent">{{ Math.round(((weeklyNutritionTrend[6]?.protein || 0) + (weeklyNutritionTrend[6]?.carbs || 0) + (weeklyNutritionTrend[6]?.fat || 0) + (weeklyNutritionTrend[6]?.vitamins || 0)) / 4) }}%</text>
-                <text class="achievement-label">综合达标</text>
-              </view>
-            </view>
-          </view>
-        </view>
       </view>
     </uni-card>
 
